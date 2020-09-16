@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Ukkabanana/netcentric_iq180/issues"
   },
-  "homepage": "https://github.com/Ukkabanana/netcentric_iq180#readme"
+  "homepage": "https://github.com/Ukkabanana/netcentric_iq180#readme",
+  "dependencies": {
+    "express.js": "^1.0.0"
+  }
 }
