@@ -22,8 +22,18 @@ app.get('/genNewNumber', (req, res) => {
 
 const numberGenerator = () => {
     var opTemplate= ["+","*","-","/"];
-    var numberArray = Array.from({ length: 5 }, () => Math.round(Math.random()*8 + 1));
-    var opChoice = Array.from({ length: 4 }, () => Math.floor(Math.random()*3));
+    var numberArray = [];
+    var opChoice = [];
+    while (numberArray.length < 5) {
+        var r = Math.round(Math.random() * 8+1) + 1;
+        if (numberArray.indexOf(r) === -1) numberArray.push(r);
+    }
+    while (opChoice.length < 4) {
+        var r = Math.floor(Math.random() * 3);
+        if (opChoice.indexOf(r) === -1) opChoice.push(r);
+        console.log(r);
+    }
+    // var opChoice = Array.from({ length: 4 }, () => Math.floor(Math.random()*3));
     var opArray = new Array(4);
     for( i = 0; i < opArray.length; i++ ){
         opArray[i] = opTemplate[opChoice[i]];
