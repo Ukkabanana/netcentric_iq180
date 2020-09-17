@@ -37,11 +37,11 @@ const numberGenerator = () => {
     }
     
     var opArray = new Array(4);
-    const math_it_up = {
-      "+": function (x, y) { return x + y },
-      "*": function (x, y) { return x * y },
-      "-": function (x, y) { return x - y },
-      "/": function (x, y) { return x/y }
+    var math_it_up = {
+        "+": (x, y) => x + y,
+        "*": (x, y) =>  x * y ,
+        "-": (x, y) => x - y,
+        "/": (x, y) => x / y,
     }​​​​​​​
     var answer = numberArray[0];
     for( i = 0; i < opArray.length; i++ ){
