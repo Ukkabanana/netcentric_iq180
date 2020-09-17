@@ -1,4 +1,4 @@
-const { randomInt } = require('crypto');
+
 var express = require('express');
 var app = express();
 var http = require('http').createServer(app);
@@ -14,14 +14,12 @@ app.get('/genNewNumber', (req, res) => {
 });
 
 const numberGenerator = () => {
-    var array= ["+","*","-","/"];
-    var num1 = Math.round(Math.random()*10);
-    var num2 = Math.round(Math.random()*10);
-    var num3 = Math.round(Math.random()*10);
-    var num4 = Math.round(Math.random()*10);
-    var num5 = Math.round(Math.random()*10);
-    var choice1 = Array.random
-    return "" + num1 + " " + num2 + num3 + num4 + num5;
+    var opTemplate= ["+","*","-","/"];
+    var numberArray = Array.from({ length: 5 }, () => Math.round(Math.random()*8 + 1));
+    var opChoice = Array.from({ length: 4 }, () => Math.floor(Math.random()*3));
+    var opArray = new Array(4);
+    
+    return "" + numberArray[0] + "" + numberArray[1] + numberArray[2] + numberArray[3] + numberArray[4];
 }
 
 io.on('connection', (socket) => {
