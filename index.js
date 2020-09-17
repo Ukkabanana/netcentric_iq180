@@ -37,16 +37,16 @@ const numberGenerator = () => {
     }
     
     var opArray = new Array(4);
-    var math_it_up = {
-        "+": (x, y) => x + y,
-        "*": (x, y) =>  x * y ,
-        "-": (x, y) => x - y,
-        "/": (x, y) => x / y,
-    }​​​​​​​
+    var computer = {
+      "+": (x,y) => x+y,
+      "*": (x,y) => x*y,
+      "-": (x,y) => x-y,
+      "/": (x,y) => x/y
+    }
     var answer = numberArray[0];
     for( i = 0; i < opArray.length; i++ ){
         opArray[i] = opTemplate[opChoice[i]];
-        answer = math_it_up[opArray[i]](answer, numberArray[i+1]);
+        answer = computer[opArray[i]](answer, numberArray[i+1]);
     }
     console.log(answer);
     return [numberArray, opArray];
