@@ -9,8 +9,15 @@ app.get('/', (req, res) => {
 });
 
 app.get('/genNewNumber', (req, res) => {
-  res.send(numberGenerator());
-    
+    var [numberArray, opArray] = numberGenerator();
+    var stringSend = "";
+    numberArray.forEach(element => {
+        stringSend += element;
+    });
+    opArray.forEach(element => {
+        stringSend += element;
+    });
+    res.send(stringSend);
 });
 
 const numberGenerator = () => {
@@ -18,8 +25,10 @@ const numberGenerator = () => {
     var numberArray = Array.from({ length: 5 }, () => Math.round(Math.random()*8 + 1));
     var opChoice = Array.from({ length: 4 }, () => Math.floor(Math.random()*3));
     var opArray = new Array(4);
-    
-    return "" + numberArray[0] + "" + numberArray[1] + numberArray[2] + numberArray[3] + numberArray[4];
+    for( i = 0; i < opArray.length; i++ ){
+        opArray[i] = opTemplate[opChoice[i]];
+    }
+    return [numberArray, opArray];
 }
 
 io.on('connection', (socket) => {
