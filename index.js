@@ -1,8 +1,10 @@
 
-var express = require('express');
-var app = express();
-var http = require('http').createServer(app);
-var io = require('socket.io')(http); //Initialize new instance of socket.io by passing in the Http object
+const express = require('express');
+const app = express();
+const socketIo = require('socket.io');
+const http = require('http')
+const server = http.createServer(app);
+var io = socketIo(http); //Initialize new instance of socket.io by passing in the Http object
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
@@ -80,6 +82,6 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(3000, () => {
+server.listen(3000, () => {
     console.log('listening on *:3000');
 });
