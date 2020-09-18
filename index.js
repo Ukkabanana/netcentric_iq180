@@ -9,7 +9,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/genNewNumber', (req, res) => {
-    var [numberArray, opArray] = numberGenerator();
+    var [numberArray, opArray, answer] = numberGenerator();
     var stringSend = "";
     numberArray.forEach(element => {
         stringSend += element;
@@ -17,8 +17,13 @@ app.get('/genNewNumber', (req, res) => {
     opArray.forEach(element => {
         stringSend += element;
     });
+    stringSend += answer;
     res.send(stringSend);
 });
+
+function checkFunction(numCheck) {
+   return numCheck >= 0 && (numCheck - Math.floor(numCheck)) === 0;
+}
 
 const numberGenerator = () => {
     var opTemplate= ["+","*","-","/"];
@@ -46,10 +51,15 @@ const numberGenerator = () => {
     var answer = numberArray[0];
     for( i = 0; i < opArray.length; i++ ){
         opArray[i] = opTemplate[opChoice[i]];
-        answer = computer[opArray[i]](answer, numberArray[i+1]);
+        var temp = computer[opArray[i]](answer, numberArray[i+1]);
+        while (!checkFunction(temp)) {
+            opArray[i] = opTemplate[Math.floor(Math.random()*4)];
+            var temp = computer[opArray[i]](answer, numberArray[i + 1]);
+        }
+        answer = temp;
     }
     console.log(answer);
-    return [numberArray, opArray];
+    return [numberArray, opArray, answer];
 }
 
 io.on('connection', (socket) => {
