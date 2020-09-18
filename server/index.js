@@ -4,7 +4,7 @@ const app = express();
 const socketIo = require('socket.io');
 const http = require('http')
 const server = http.createServer(app);
-var io = socketIo(http); //Initialize new instance of socket.io by passing in the Http object
+var io = socketIo(server); //Initialize new instance of socket.io by passing in the Http object
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
@@ -63,11 +63,13 @@ const numberGenerator = () => {
     console.log(answer);
     return [numberArray, opArray, answer];
 }
-
+var allIds = [];
 io.on('connection', (socket) => {
+    var userId = allIds.push(socket)
+    console.log(userId);
     //Listening on connection for incoming sockets
-    console.log('a user connected');
-    socket.broadcast.emit('A user connected'); //Send message to everyone but the sender
+    console.log('A user connected with the id of ' + userId);
+    socket.broadcast.emit('A user connected with the id of ' + userId); //Send message to everyone but the sender
 
     socket.on('disconnect', () => {
         //On disconnect socket
