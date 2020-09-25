@@ -5,22 +5,20 @@ const socketIo = require('socket.io');
 const http = require('http')
 const server = http.createServer(app);
 var io = socketIo(server); //Initialize new instance of socket.io by passing in the Http object
+app.use(express.json());
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
 app.get('/genNewNumber', (req, res) => {
-    var [numberArray, opArray, answer] = numberGenerator();
-    var stringSend = "";
-    numberArray.forEach(element => {
-        stringSend += element;
-    });
-    opArray.forEach(element => {
-        stringSend += element;
-    });
-    stringSend += answer;
-    res.send(stringSend);
+    let [numberArray, opArray, answer] = numberGenerator();
+    let numberSet = {
+        numbers: numberArray,
+        operators: opArray,
+        answer: answer
+    };
+    res.send(numberSet);
 });
 
 function checkFunction(numCheck) {
@@ -63,9 +61,9 @@ const numberGenerator = () => {
     console.log(answer);
     return [numberArray, opArray, answer];
 }
-var allIds = [];
+let allIds = [];
 io.on('connection', (socket) => {
-    var userId = allIds.push(socket)
+    let userId = allIds.push(socket)
     console.log(userId);
     //Listening on connection for incoming sockets
     console.log('A user connected with the id of ' + userId);
