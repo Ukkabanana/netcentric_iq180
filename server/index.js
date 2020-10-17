@@ -60,7 +60,7 @@ const numberGenerator = () => {
     while (numberArray.length < 5) {
         var r = Math.round(Math.random() * 8 + 1);
         //If number is not already in the array, push the number.
-        if (count(numberArray, desiredNum) <= 2) numberArray.push(r);
+        if (count(numberArray, r) <= 2) numberArray.push(r);
     }
     //Generating the numbers for the index of the operand
     while (opChoice.length < 4) {
