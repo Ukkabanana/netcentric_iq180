@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const socketIo = require('socket.io');
 const http = require('http')
+const stringMath = require('string-math');
 const server = http.createServer(app);
 var io = socketIo(server); //Initialize new instance of socket.io by passing in the Http object
 app.use(express.json());
@@ -36,7 +37,7 @@ const numberGenerator = () => {
     var numberArray = [];
     var opChoice = [];
     //Creating an array to store the operands.
-    var opArray = new Array(4);
+    var opArray = [];
     var netEquation = new Array(9);
 
     //Computing function
@@ -46,12 +47,20 @@ const numberGenerator = () => {
         '-': (x, y) => x - y,
         '/': (x, y) => x / y,
     };
+    function count(arr, desiredNum){
+        var counts = {};
 
+        for (var i = 0; i < arr.length; i++) {
+            var num = arr[i];
+            counts[num] = counts[num] ? counts[num] + 1 : 1;
+        }
+        return counts[desiredNum];
+    }
     //Generating the Numbers
     while (numberArray.length < 5) {
         var r = Math.round(Math.random() * 8 + 1);
         //If number is not already in the array, push the number.
-        if (numberArray.indexOf(r) === -1) numberArray.push(r);
+        if (count(numberArray, desiredNum) <= 2) numberArray.push(r);
     }
     //Generating the numbers for the index of the operand
     while (opChoice.length < 4) {
@@ -80,15 +89,26 @@ const numberGenerator = () => {
             netEquation[i]=opTemplate[opChoice[opIndex]];
             opIndex++;
         }
-    }
+    };
     
     //Evaluate the entire equation.
     //Loop while the net answer is still negative and/or a decimal
-    while ( !checkFunction( eval(netEquation.join(' ')) ) ) {
-        console.log(netEquation.join(''));
-    }
+    var indexToBeChanged = 1;
     
-    var answer = numberArray[0];
+    
+    while (!checkFunction(stringMath(netEquation.join("")))) {
+        var randIndex = Math.floor(Math.random() * 4)
+        netEquation[indexToBeChanged] = netEquation.indexOf(opTemplate[randIndex])===-1 ?  opTemplate[randIndex]: opTemplate[(randIndex +1) %4];
+        indexToBeChanged = (indexToBeChanged + 2);
+        console.log(netEquation.join(' '), " line 95");
+        
+    };
+    for(i = 1; i<netEquation.length; i+=2){
+        opArray.push(netEquation[i]);
+    }
+    console.log(netEquation.join(' '), "\n");
+    
+    var answer = stringMath(netEquation.join(''));
     // for (i = 0; i < 4; i++) {
     //     opArray[i] = opTemplate[opChoice[i]];
     //     var temp = computer[opArray[i]](answer, numberArray[i + 1]);
