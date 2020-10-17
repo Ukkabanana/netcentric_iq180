@@ -54,13 +54,15 @@ const numberGenerator = () => {
             var num = arr[i];
             counts[num] = counts[num] ? counts[num] + 1 : 1;
         }
+        console.log(counts);
+        console.log(desiredNum, ":",counts[desiredNum]);
         return counts[desiredNum];
     }
     //Generating the Numbers
     while (numberArray.length < 5) {
         var r = Math.round(Math.random() * 8 + 1);
         //If number is not already in the array, push the number.
-        if (count(numberArray, r) <= 2) numberArray.push(r);
+        if (numberArray.indexOf(r)===-1) numberArray.push(r);
     }
     //Generating the numbers for the index of the operand
     while (opChoice.length < 4) {
@@ -97,31 +99,19 @@ const numberGenerator = () => {
     
     
     while (!checkFunction(stringMath(netEquation.join("")))) {
-        var randIndex = Math.floor(Math.random() * 4)
-        netEquation[indexToBeChanged] = netEquation.indexOf(opTemplate[randIndex])===-1 ?  opTemplate[randIndex]: opTemplate[(randIndex +1) %4];
+        var randIndex = Math.floor(Math.random() * 4);
+        netEquation[indexToBeChanged] = count(netEquation, opTemplate[randIndex]) <2 ?  opTemplate[randIndex]: opTemplate[(randIndex +1) %4];
         indexToBeChanged = (indexToBeChanged + 2) < 9 ? indexToBeChanged + 2: 1;
-        console.log(netEquation.join(' '), " line 95");
+        console.log(netEquation.join(''), " line 95");
         
     };
     for(i = 1; i<netEquation.length; i+=2){
         opArray.push(netEquation[i]);
     }
-    console.log(netEquation.join(' '), "\n");
+    console.log(netEquation.join(''), "\n");
     
     var answer = stringMath(netEquation.join(''));
-    // for (i = 0; i < 4; i++) {
-    //     opArray[i] = opTemplate[opChoice[i]];
-    //     var temp = computer[opArray[i]](answer, numberArray[i + 1]);
-    //     while (!checkFunction(temp)) {
-    //         var newOperand = opTemplate[Math.floor(Math.random() * 4)];
-    //         while (opArray.indexOf(newOperand) !== -1) {
-    //             newOperand = opTemplate[Math.floor(Math.random() * 4)];
-    //         }
-    //         opArray[i] = newOperand;
-    //         var temp = computer[opArray[i]](answer, numberArray[i + 1]);
-    //     }
-    //     answer = temp;
-    // }
+    
     
     return [numberArray, opArray, answer];
 }
