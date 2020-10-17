@@ -99,7 +99,7 @@ const numberGenerator = () => {
     while (!checkFunction(stringMath(netEquation.join("")))) {
         var randIndex = Math.floor(Math.random() * 4)
         netEquation[indexToBeChanged] = netEquation.indexOf(opTemplate[randIndex])===-1 ?  opTemplate[randIndex]: opTemplate[(randIndex +1) %4];
-        indexToBeChanged = (indexToBeChanged + 2);
+        indexToBeChanged = (indexToBeChanged + 2) < 9 ? indexToBeChanged + 2: 1;
         console.log(netEquation.join(' '), " line 95");
         
     };
