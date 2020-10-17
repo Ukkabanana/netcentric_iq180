@@ -21,44 +21,88 @@ app.get('/genNewNumber', (req, res) => {
     res.send(numberSet);
 });
 
+app.post('/setName',(req,res) => {
+    var name = req.body.name;
+    console.log(name);
+    res.send(name);
+})
+
 function checkFunction(numCheck) {
    return numCheck >= 0 && (numCheck - Math.floor(numCheck)) === 0;
 }
 
 const numberGenerator = () => {
-    var opTemplate= ["+","*","-","/"];
+    var opTemplate = ['+', '*', '-', '/'];
     var numberArray = [];
     var opChoice = [];
+    //Creating an array to store the operands.
+    var opArray = new Array(4);
+    var netEquation = new Array(9);
+
+    //Computing function
+    var computer = {
+        '+': (x, y) => x + y,
+        '*': (x, y) => x * y,
+        '-': (x, y) => x - y,
+        '/': (x, y) => x / y,
+    };
+
+    //Generating the Numbers
     while (numberArray.length < 5) {
-        var r = Math.round(Math.random() * 8+1);
+        var r = Math.round(Math.random() * 8 + 1);
+        //If number is not already in the array, push the number.
         if (numberArray.indexOf(r) === -1) numberArray.push(r);
-        
     }
-    
+    //Generating the numbers for the index of the operand
     while (opChoice.length < 4) {
         var r = Math.floor(Math.random() * 4);
-        if(r === 4) r = 3;
-        if (opChoice.indexOf(r) === -1) opChoice.push(r);
+        if (r === 4) r = 3;
+        if (opChoice.indexOf(r) === -1) {
+            opChoice.push(r);
+            
+        }
+    }
+    // //Mapping the generated number into the operators array.
+    // for(i=0; i< 4; i++){
+    //     opArray.push(opTemplate[opChoice[i]]);
+    // }
+    function checkFunction(numCheck) {
+        return numCheck >= 0 && numCheck - Math.floor(numCheck) === 0;
+    }
+    var numIndex = 0;
+    var opIndex = 0;
+    //Insert numbers and operators into one array;
+    for( i = 0; i < netEquation.length; i++){
+        if(i%2 === 0){
+            netEquation[i]=numberArray[numIndex];
+            numIndex++;
+        } else{
+            netEquation[i]=opTemplate[opChoice[opIndex]];
+            opIndex++;
+        }
     }
     
-    var opArray = new Array(4);
-    var computer = {
-      "+": (x,y) => x+y,
-      "*": (x,y) => x*y,
-      "-": (x,y) => x-y,
-      "/": (x,y) => x/y
+    //Evaluate the entire equation.
+    //Loop while the net answer is still negative and/or a decimal
+    while ( !checkFunction( eval(netEquation.join(' ')) ) ) {
+        console.log(netEquation.join(''));
     }
+    
     var answer = numberArray[0];
-    for( i = 0; i < opArray.length; i++ ){
-        opArray[i] = opTemplate[opChoice[i]];
-        var temp = computer[opArray[i]](answer, numberArray[i+1]);
-        while (!checkFunction(temp)) {
-            opArray[i] = opTemplate[Math.floor(Math.random()*4)];
-            var temp = computer[opArray[i]](answer, numberArray[i + 1]);
-        }
-        answer = temp;
-    }
-    console.log(answer);
+    // for (i = 0; i < 4; i++) {
+    //     opArray[i] = opTemplate[opChoice[i]];
+    //     var temp = computer[opArray[i]](answer, numberArray[i + 1]);
+    //     while (!checkFunction(temp)) {
+    //         var newOperand = opTemplate[Math.floor(Math.random() * 4)];
+    //         while (opArray.indexOf(newOperand) !== -1) {
+    //             newOperand = opTemplate[Math.floor(Math.random() * 4)];
+    //         }
+    //         opArray[i] = newOperand;
+    //         var temp = computer[opArray[i]](answer, numberArray[i + 1]);
+    //     }
+    //     answer = temp;
+    // }
+    
     return [numberArray, opArray, answer];
 }
 let allIds = [];
