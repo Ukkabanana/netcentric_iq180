@@ -1,32 +1,18 @@
-
 const express = require('express');
 const app = express();
-const socketIo = require('socket.io');
+const socketIO = require('socket.io');
 const http = require('http')
 const stringMath = require('string-math');
 const server = http.createServer(app);
-var io = socketIo(server); //Initialize new instance of socket.io by passing in the Http object
+const path = require('path');
+var io = socketIO(server); //Initialize new instance of socket.io by passing in the Http object
 app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(path.join(__dirname ,'/../public/index.html'));
 });
 
-app.get('/genNewNumber', (req, res) => {
-    let [numberArray, opArray, answer] = numberGenerator();
-    let numberSet = {
-        numbers: numberArray,
-        operators: opArray,
-        answer: answer
-    };
-    res.send(numberSet);
-});
 
-app.post('/setName',(req,res) => {
-    var name = req.body.name;
-    console.log(name);
-    res.send(name);
-})
 
 function checkFunction(numCheck) {
    return numCheck >= 0 && (numCheck - Math.floor(numCheck)) === 0;
@@ -112,16 +98,20 @@ const numberGenerator = () => {
     
     return [numberArray, opArray, answer];
 }
+
+
 let allIds = [];
 var numUser = 0;
+//Io refers to the httpServer socket refers to the current client's socket
+
 io.on('connection', (socket) => {
-    io.emit('hi','everyone');
     let userId = allIds.push(socket);
+    console.log('A user just connected!!');
     //Listening on connection for incoming sockets
-    io.clients((error, clients) => {
-        if (error) throw error;
-        console.log(clients); // => [6em3d4TJP8Et9EMNAAAA, G5p55dHhGgUnLUctAAAB]
-    });
+    // io.clients((error, clients) => {
+    //     if (error) throw error;
+    //     console.log(clients); // => [6em3d4TJP8Et9EMNAAAA, G5p55dHhGgUnLUctAAAB]
+    // });
     
     socket.broadcast.emit('A user connected with the id of ' + userId); //Send message to everyone but the sender
     socket.on('genNewNum', () =>{
@@ -135,7 +125,7 @@ io.on('connection', (socket) => {
     })
     socket.on('disconnect', () => {
         //On disconnect socket
-        allIds.splice(allIds.indexOf(userId),1);
+        
         console.log('user disconnected');
         socket.broadcast.emit('A user disconnected');
     });
