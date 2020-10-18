@@ -7,12 +7,10 @@ const server = http.createServer(app);
 const path = require('path');
 var io = socketIO(server); //Initialize new instance of socket.io by passing in the Http object
 app.use(express.json());
-const publicPath = path.join(__dirname ,'/../public/');
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname ,'/../public/'));
 });
-
-
 
 function checkFunction(numCheck) {
    return numCheck >= 0 && (numCheck - Math.floor(numCheck)) === 0;
