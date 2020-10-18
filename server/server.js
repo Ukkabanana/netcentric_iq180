@@ -5,12 +5,12 @@ const http = require('http')
 const stringMath = require('string-math');
 const server = http.createServer(app);
 const path = require('path');
+const publicPath = path.join(__dirname, '/../public/');
 var io = socketIO(server); //Initialize new instance of socket.io by passing in the Http object
 app.use(express.json());
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname ,'/../public/'));
-});
+app.use(express.static(publicPath));
+
 
 function checkFunction(numCheck) {
    return numCheck >= 0 && (numCheck - Math.floor(numCheck)) === 0;
@@ -99,10 +99,11 @@ const numberGenerator = () => {
 
 
 let allIds = [];
-var numUser = 0;
+var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
 
 io.on('connection', (socket) => {
+    var addedUser = false;
     let userId = allIds.push(socket);
     console.log('A user just connected!!');
     //Listening on connection for incoming sockets
@@ -111,26 +112,51 @@ io.on('connection', (socket) => {
     //     console.log(clients); // => [6em3d4TJP8Et9EMNAAAA, G5p55dHhGgUnLUctAAAB]
     // });
     
-    socket.broadcast.emit('A user connected with the id of ' + userId); //Send message to everyone but the sender
+    //Client requests to add a new user.
+    socket.on('add user', (username) => {
+        if (addedUser) return;
+
+        // we store the username in the socket session for this client
+        socket.username = username;
+        ++numUsers;
+        addedUser = true;
+        socket.emit('login', {
+            numUsers: numUsers,
+        });
+        // echo globally (all clients) that a person has connected
+        socket.broadcast.emit('user joined', {
+            username: socket.username,
+            numUsers: numUsers,
+        });
+    });
+    socket.on('gameStart', () => {
+        socket.emit('Game is Starting');
+        
+        socket.emit(`Welcome ${socket.username}`);
+        socket.score = 0;
+    });
+    socket.on('sendAnswer', (answer) => {
+        if (answer === socket.numberSet['answer']) {
+            socket.emit('answer is correct');
+        }
+    });
+    //Generate the random number function
     socket.on('genNewNum', () =>{
+        console.log('genning new Num');
         let [numberArray, opArray, answer] = numberGenerator();
         let numberSet = {
             numbers: numberArray,
             operators: opArray,
             answer: answer,
         };
-        socket.broadcast.emit(numberSet);
+        socket.numberSet = numberSet;
+        socket.emit(numberSet);
     })
     socket.on('disconnect', () => {
         //On disconnect socket
-        
+        if(addedUser) --numUsers;
         console.log('user disconnected');
         socket.broadcast.emit('A user disconnected');
-    });
-
-
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg); //Send to everyone including sender
     });
 });
 const port = process.env.PORT || 3000;
