@@ -14,6 +14,7 @@
         </style>
     </head>
     <body>
+        <button>Hello There</button>
         <ul id="messages"></ul>
         <form action="">
         <input id="m" autocomplete="off" /><button>Send</button>
@@ -26,6 +27,7 @@
                 $('form').submit(function(e){
                 e.preventDefault(); // prevents page reloading
                 socket.emit('chat message', $('#m').val());
+                socket.emit('genNewNum')
                 $('#m').val('');
                 return false;
                 });

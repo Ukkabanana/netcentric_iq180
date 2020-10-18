@@ -54,8 +54,8 @@ const numberGenerator = () => {
             var num = arr[i];
             counts[num] = counts[num] ? counts[num] + 1 : 1;
         }
-        console.log(counts);
-        console.log(desiredNum, ":",counts[desiredNum]);
+        // console.log(counts);
+        // console.log(desiredNum, ":",counts[desiredNum]);
         return counts[desiredNum];
     }
     //Generating the Numbers
@@ -73,10 +73,7 @@ const numberGenerator = () => {
             
         }
     }
-    // //Mapping the generated number into the operators array.
-    // for(i=0; i< 4; i++){
-    //     opArray.push(opTemplate[opChoice[i]]);
-    // }
+    
     function checkFunction(numCheck) {
         return numCheck >= 0 && numCheck - Math.floor(numCheck) === 0;
     }
@@ -108,7 +105,7 @@ const numberGenerator = () => {
     for(i = 1; i<netEquation.length; i+=2){
         opArray.push(netEquation[i]);
     }
-    console.log(netEquation.join(''), "\n");
+    // console.log(netEquation.join(''), "\n");
     
     var answer = stringMath(netEquation.join(''));
     
@@ -116,21 +113,34 @@ const numberGenerator = () => {
     return [numberArray, opArray, answer];
 }
 let allIds = [];
+var numUser = 0;
 io.on('connection', (socket) => {
-    let userId = allIds.push(socket)
-    console.log(userId);
+    io.emit('hi','everyone');
+    let userId = allIds.push(socket);
     //Listening on connection for incoming sockets
-    console.log('A user connected with the id of ' + userId);
+    io.clients((error, clients) => {
+        if (error) throw error;
+        console.log(clients); // => [6em3d4TJP8Et9EMNAAAA, G5p55dHhGgUnLUctAAAB]
+    });
+    
     socket.broadcast.emit('A user connected with the id of ' + userId); //Send message to everyone but the sender
-
+    socket.on('genNewNum', () =>{
+        let [numberArray, opArray, answer] = numberGenerator();
+        let numberSet = {
+            numbers: numberArray,
+            operators: opArray,
+            answer: answer,
+        };
+        socket.broadcast.emit(numberSet);
+    })
     socket.on('disconnect', () => {
         //On disconnect socket
+        allIds.splice(allIds.indexOf(userId),1);
         console.log('user disconnected');
         socket.broadcast.emit('A user disconnected');
     });
-    //   socket.on("chat message", (msg) => { //User emitting a message
-    //     console.log("message: " + msg);
-    //   });
+
+
     socket.on('chat message', (msg) => {
         io.emit('chat message', msg); //Send to everyone including sender
     });
