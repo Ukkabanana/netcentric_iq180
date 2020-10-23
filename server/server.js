@@ -91,13 +91,13 @@ const numberGenerator = () => {
     }
     // console.log(netEquation.join(''), "\n");
     
-    var answer = stringMath(netEquation.join(''));
+    let answer = stringMath(netEquation.join(''));
     
     
     return [numberArray, opArray, answer];
 }
 
-
+var answer = 0;
 let allIds = [];
 var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
@@ -111,7 +111,7 @@ io.on('connection', (socket) => {
     //     if (error) throw error;
     //     console.log(clients); // => [6em3d4TJP8Et9EMNAAAA, G5p55dHhGgUnLUctAAAB]
     // });
-    
+
     //Client requests to add a new user.
     socket.on('add user', (username) => {
         if (addedUser) return;
@@ -131,34 +131,55 @@ io.on('connection', (socket) => {
     });
     socket.on('gameStart', () => {
         socket.emit('Game is Starting');
-        
         socket.emit(`Welcome ${socket.username}`);
         socket.score = 0;
-    });
-    socket.on('sendAnswer', (answer) => {
-        if (answer === socket.numberSet['answer']) {
-            socket.emit('answer is correct');
-        }
+        //timer.start()
     });
     //Generate the random number function
-    socket.on('genNewNum', () =>{
+    socket.on('genNewNum', () => {
         console.log('genning new Num');
         let [numberArray, opArray, answer] = numberGenerator();
-        let numberSet = {
+        this.answer = answer; //from the var answer
+        console.log('answer at gen new num' + answer);
+        var numberSet = {
             numbers: numberArray,
             operators: opArray,
-            answer: answer,
         };
         socket.numberSet = numberSet;
         socket.emit(numberSet);
+    });
+    socket.on('sendAnswer', (guess) => {
+        //Check if timer has timeout
+        //If timeout, don't accept answer
+        //Check if user is current player, if not don't accept answer
+        console.log(this.answer);
+        if (guess === this.answer) {
+            socket.emit('answer is correct');
+            socket.score += 1;
+            //timer.stop()
+        } else {
+            socket.emit('answer is wrong!!!! Answer is ',this.answer);
+        }
+    });
+    socket.on('reset', function() {
+        socket.score = 0;
+        //timer.reset()
+    });
+    socket.on('timeout', function() {
+        //Cycle next user
+        //Reset timer
+        //Stop accepting input
+        continue;
     })
+
     socket.on('disconnect', () => {
         //On disconnect socket
-        if(addedUser) --numUsers;
+        if (addedUser) --numUsers;
         console.log('user disconnected');
         socket.broadcast.emit('A user disconnected');
     });
 });
+
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
     console.log(`listening on port ${port}`);
