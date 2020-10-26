@@ -83,7 +83,6 @@ const numberGenerator = () => {
         var randIndex = Math.floor(Math.random() * 4);
         netEquation[indexToBeChanged] = count(netEquation, opTemplate[randIndex]) <2 ?  opTemplate[randIndex]: opTemplate[(randIndex +1) %4];
         indexToBeChanged = (indexToBeChanged + 2) < 9 ? indexToBeChanged + 2: 1;
-        console.log(netEquation.join(''), " line 95");
         
     };
     for(i = 1; i<netEquation.length; i+=2){
@@ -94,11 +93,11 @@ const numberGenerator = () => {
     let answer = stringMath(netEquation.join(''));
     
     
-    return [numberArray, opArray, answer];
+    return [numberArray, opArray, answer, netEquation.join('')];
 }
 
 var answer = 0;
-let allIds = [];
+let allUsers = [];
 var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
 
@@ -106,6 +105,7 @@ io.on('connection', (socket) => {
     var addedUser = false;
     let userId = allIds.push(socket);
     console.log('A user just connected!!');
+    socket.emit('A user connected');
     //Listening on connection for incoming sockets
     // io.clients((error, clients) => {
     //     if (error) throw error;
@@ -113,7 +113,7 @@ io.on('connection', (socket) => {
     // });
 
     //Client requests to add a new user.
-    socket.on('add user', (username) => {
+    socket.on('add user', (username, type) => {
         if (addedUser) return;
 
         // we store the username in the socket session for this client
@@ -124,10 +124,13 @@ io.on('connection', (socket) => {
             numUsers: numUsers,
         });
         // echo globally (all clients) that a person has connected
-        socket.broadcast.emit('user joined', {
+        socket.broadcast.emit('A user joined', {
             username: socket.username,
             numUsers: numUsers,
         });
+        if(type === "host"){
+            //Emit room code
+        }
     });
     socket.on('gameStart', () => {
         socket.emit('Game is Starting');
@@ -138,27 +141,27 @@ io.on('connection', (socket) => {
     //Generate the random number function
     socket.on('genNewNum', () => {
         console.log('genning new Num');
-        let [numberArray, opArray, answer] = numberGenerator();
+        let [numberArray, opArray, answer, netEquation] = numberGenerator();
         this.answer = answer; //from the var answer
-        console.log('answer at gen new num' + answer);
+        console.log('answer at gen new num ' + answer);
         var numberSet = {
             numbers: numberArray,
-            operators: opArray,
+            answers: answer,
         };
-        socket.numberSet = numberSet;
+        
         socket.emit(numberSet);
     });
-    socket.on('sendAnswer', (guess) => {
+    socket.on('sendAnswer', (guess, workingString) => {
         //Check if timer has timeout
         //If timeout, don't accept answer
         //Check if user is current player, if not don't accept answer
-        console.log(this.answer);
-        if (guess === this.answer) {
+        console.log('The user guessed ' + guess);
+        if (guess === this.answer && workingString ===) {
             socket.emit('answer is correct');
             socket.score += 1;
             //timer.stop()
         } else {
-            socket.emit('answer is wrong!!!! Answer is ',this.answer);
+            socket.emit('answer is wrong!!!!  ');
         }
     });
     socket.on('reset', function() {
@@ -169,7 +172,7 @@ io.on('connection', (socket) => {
         //Cycle next user
         //Reset timer
         //Stop accepting input
-        continue;
+        //continue;
     })
 
     socket.on('disconnect', () => {
@@ -177,6 +180,7 @@ io.on('connection', (socket) => {
         if (addedUser) --numUsers;
         console.log('user disconnected');
         socket.broadcast.emit('A user disconnected');
+        socket.broadcast.emit(numUsers);
     });
 });
 
