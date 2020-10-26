@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const socketIO = require('socket.io');
 const http = require('http')
-const stringMath = require('string-math');
+const stringMath = require('string-math'); //Treat a string as a math operation and return the answer
 const server = http.createServer(app);
 const path = require('path');
 const publicPath = path.join(__dirname, '/../public/');
@@ -103,9 +103,8 @@ var numUsers = 0;
 
 io.on('connection', (socket) => {
     var addedUser = false;
-    let userId = allIds.push(socket);
     console.log('A user just connected!!');
-    socket.emit('A user connected');
+    socket.broadcast.emit('A user connected');
     //Listening on connection for incoming sockets
     // io.clients((error, clients) => {
     //     if (error) throw error;
@@ -113,29 +112,34 @@ io.on('connection', (socket) => {
     // });
 
     //Client requests to add a new user.
-    socket.on('add user', (username, type) => {
+    socket.on('add user', (username) => {
         if (addedUser) return;
 
         // we store the username in the socket session for this client
+        if(numUsers === 0){
+            socket.type = "host";
+        } else{
+            socket.type = 'client';
+        }
         socket.username = username;
+        allUsers.push(username);
         ++numUsers;
         addedUser = true;
-        socket.emit('login', {
-            numUsers: numUsers,
-        });
-        // echo globally (all clients) that a person has connected
+        // echo globally (all clients except sender) that a person has connected
         socket.broadcast.emit('A user joined', {
             username: socket.username,
             numUsers: numUsers,
         });
-        if(type === "host"){
-            //Emit room code
-        }
+        
     });
     socket.on('gameStart', () => {
-        socket.emit('Game is Starting');
+        if(socket.type !== "host") return;
+        var firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
+        io.emit('Game is Starting');
+        io.emit(firstUser);
         socket.emit(`Welcome ${socket.username}`);
         socket.score = 0;
+
         //timer.start()
     });
     //Generate the random number function
@@ -151,22 +155,27 @@ io.on('connection', (socket) => {
         
         socket.emit(numberSet);
     });
-    socket.on('sendAnswer', (guess, workingString) => {
+    socket.on('sendAnswer', (workingAnswer) => {
         //Check if timer has timeout
         //If timeout, don't accept answer
         //Check if user is current player, if not don't accept answer
-        console.log('The user guessed ' + guess);
-        if (guess === this.answer && workingString ===) {
+        console.log('The user guessed ' + workingAnswer);
+        let guess = stringMath(workingAnswer)
+        if (guess === this.answer) {
             socket.emit('answer is correct');
             socket.score += 1;
             //timer.stop()
         } else {
-            socket.emit('answer is wrong!!!!  ');
+            socket.emit('answer is wrong!!!!');
         }
     });
     socket.on('reset', function() {
         socket.score = 0;
         //timer.reset()
+    });
+
+    socket.on('startTimer', function() {
+        //start timer.
     });
     socket.on('timeout', function() {
         //Cycle next user
