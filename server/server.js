@@ -134,6 +134,8 @@ io.on('connection', (socket) => {
         });
         
     });
+
+    //Start the game
     socket.on('gameStart', () => {
         if(socket.type !== "host") return;
         var firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
@@ -144,6 +146,7 @@ io.on('connection', (socket) => {
 
         //timer.start()
     });
+    
     //Generate the random number function
     socket.on('genNewNum', () => {
         console.log('genning new Num');
@@ -157,6 +160,8 @@ io.on('connection', (socket) => {
         
         socket.emit(numberSet);
     });
+
+    //Check Answer function
     socket.on('sendAnswer', (workingAnswer) => {
         //Check if timer has timeout
         //If timeout, don't accept answer
