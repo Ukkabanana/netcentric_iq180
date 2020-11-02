@@ -100,7 +100,7 @@ var answer = 0;
 let allUsers = [];
 var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
-
+var hostId = 0;
 io.on('connection', (socket) => {
     var addedUser = false;
     console.log('A user just connected!!');
@@ -118,6 +118,8 @@ io.on('connection', (socket) => {
         // we store the username in the socket session for this client
         if(numUsers === 0){
             socket.type = "host";
+            hostId = socket.id;
+            console.log(hostId);
         } else{
             socket.type = 'client';
         }
@@ -186,7 +188,10 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         //On disconnect socket
-        if (addedUser) --numUsers;
+        if (addedUser) { 
+            allUsers.splice(allUsers.indexOf(socket.username),1);
+            --numUsers
+        };
         console.log('user disconnected');
         socket.broadcast.emit('A user disconnected');
         socket.broadcast.emit(numUsers);
