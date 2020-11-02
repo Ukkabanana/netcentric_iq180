@@ -64,7 +64,7 @@ const numberGenerator = () => {
     var numIndex = 0;
     var opIndex = 0;
     //Insert numbers and operators into one array;
-    for( i = 0; i < netEquation.length; i++){
+    for( let i = 0; i < netEquation.length; i++){
         if(i%2 === 0){
             netEquation[i]=numberArray[numIndex];
             numIndex++;
@@ -85,7 +85,7 @@ const numberGenerator = () => {
         indexToBeChanged = (indexToBeChanged + 2) < 9 ? indexToBeChanged + 2: 1;
         
     };
-    for(i = 1; i<netEquation.length; i+=2){
+    for(let i = 1; i<netEquation.length; i+=2){
         opArray.push(netEquation[i]);
     }
     // console.log(netEquation.join(''), "\n");
@@ -170,7 +170,7 @@ io.on('connection', (socket) => {
         let guess = stringMath(workingAnswer)
         var numberArray = ['1','2','3','4','5','6','7','8','9'];
         if (guess === this.answer) {
-            for(i = 0; i < workingAnswer.length; i++){
+            for(let i = 0; i < workingAnswer.length; i++){
                 workingAnswer
             }
             socket.emit('answer is correct');
