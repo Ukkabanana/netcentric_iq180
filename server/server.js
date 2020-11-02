@@ -168,7 +168,11 @@ io.on('connection', (socket) => {
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
         let guess = stringMath(workingAnswer)
+        var numberArray = ['1','2','3','4','5','6','7','8','9'];
         if (guess === this.answer) {
+            for(i = 0; i < workingAnswer.length; i++){
+                workingAnswer
+            }
             socket.emit('answer is correct');
             socket.score += 1;
             //timer.stop()
