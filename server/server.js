@@ -95,6 +95,18 @@ const numberGenerator = () => {
     
     return [numberArray, opArray, answer, netEquation.join('')];
 }
+function getListOfSocketsInRoom(room) {
+    let sockets = [];
+    try {
+        let socketObj = io.sockets.adapter.rooms[room].sockets;
+        for (let id of Object.keys(socketObj)) {
+            sockets.push(io.sockets.connected[id]);
+        }
+    } catch (e) {
+        console.log(`Attempted to access non-existent room: ${room}`);
+    }
+    return sockets;
+}
 
 var answer = 0;
 var globalNumberArray = [];
@@ -103,15 +115,21 @@ var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
 var hostId = 0;
 io.on('connection', (socket) => {
+    //Get list of all sockets in the given room
+    
     
     var addedUser = false;
     console.log('A user just connected!!');
     socket.broadcast.emit('A user connected');
+
+    //Iterate through all rooms and get list of all sockets in there
     let rooms = io.sockets.adapter.rooms;
     for (let room of Object.keys(rooms)) {
-        console.log('room');
-        console.log('  ', rooms[room]);
+        // console.log('room');
+        // console.log('  ', rooms[room]);
+        allSockets = getListOfSocketsInRoom(room);
     }
+
     //Listening on connection for incoming sockets
     // io.clients((error, clients) => {
     //     if (error) throw error;
@@ -142,7 +160,7 @@ io.on('connection', (socket) => {
             username: socket.username,
             numUsers: numUsers,
         });
-        
+        socket.timeUsed = numUsers;
     });
 
     //Start the game
@@ -174,6 +192,7 @@ io.on('connection', (socket) => {
  
     //Check Answer function
     socket.on('sendAnswer', (workingAnswer) => {
+        
         //Check if timer has timeout
         //If timeout, don't accept answer
         //Check if user is current player, if not don't accept answer
@@ -197,8 +216,24 @@ io.on('connection', (socket) => {
                 console.log('answer is correct');
                 socket.emit('answer is correct');
                 socket.score += 1;
-                //Check if last person, if so compare to other person's timer
-                 
+                //Check if last person, 
+                //if so compare to other person's timer
+                var fastestSocket = {
+                    id: socket.id,
+                    time: socket.timeUsed
+                }
+                
+                allUsers.forEach(element => {
+                    if(element.timeUsed < fastestSocket.time){
+                        fastestSocket.id = element.id;
+                        fastestSocket.time = element.timeUsed;
+                    }
+                });
+                if(fastestSocket.id === socket.id){
+                    socket.score += 1;
+                } else {
+                    socket.to(fastestSocket.id).emit('addScore');
+                }
                 //If other person time is faster emit a message so that other person can add score
             }
             //timer.stop()
