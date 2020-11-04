@@ -97,14 +97,21 @@ const numberGenerator = () => {
 }
 
 var answer = 0;
+var globalNumberArray = [];
 let allUsers = [];
 var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
 var hostId = 0;
 io.on('connection', (socket) => {
+    
     var addedUser = false;
     console.log('A user just connected!!');
     socket.broadcast.emit('A user connected');
+    let rooms = io.sockets.adapter.rooms;
+    for (let room of Object.keys(rooms)) {
+        console.log('room');
+        console.log('  ', rooms[room]);
+    }
     //Listening on connection for incoming sockets
     // io.clients((error, clients) => {
     //     if (error) throw error;
@@ -119,12 +126,15 @@ io.on('connection', (socket) => {
         if(numUsers === 0){
             socket.type = "host";
             hostId = socket.id;
-            console.log(hostId);
+            console.log("Host's Id is",hostId);
         } else{
             socket.type = 'client';
         }
         socket.username = username;
-        allUsers.push(username);
+        allUsers.push(socket);
+        allUsers.forEach(element => {
+            console.log("ID: ",element.id, ": username: ",element.username)
+        });
         ++numUsers;
         addedUser = true;
         // echo globally (all clients except sender) that a person has connected
@@ -151,6 +161,7 @@ io.on('connection', (socket) => {
     socket.on('genNewNum', () => {
         console.log('genning new Num');
         let [numberArray, opArray, answer, netEquation] = numberGenerator();
+        globalNumberArray = numberArray;
         this.answer = answer; //from the var answer
         console.log('answer at gen new num ' + answer);
         var numberSet = {
@@ -158,28 +169,46 @@ io.on('connection', (socket) => {
             answers: answer,
         };
         
-        socket.emit(numberSet);
+        socket.emit('sending number', numberSet);
     });
-
+ 
     //Check Answer function
     socket.on('sendAnswer', (workingAnswer) => {
         //Check if timer has timeout
         //If timeout, don't accept answer
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
-        let guess = stringMath(workingAnswer)
-        var numberArray = ['1','2','3','4','5','6','7','8','9'];
+        //let guess = stringMath(workingAnswer);
+        let guess = this.answer;
         if (guess === this.answer) {
-            for( i = 0; i < workingAnswer.length; i++){
-                workingAnswer
+            let answerIsWrong = false;
+            console.log("global number array: ",globalNumberArray);
+            for( i = 0; i < globalNumberArray.length; i++) {
+                if(!(workingAnswer.includes(globalNumberArray[i]))){
+                    answerIsWrong = true;
+                    console.log('answer is wrong');
+                    socket.emit('answer is wrong');
+                    break;
+                } 
+            };
+            if(!answerIsWrong) {
+                //Check time
+                //Record time
+                console.log('answer is correct');
+                socket.emit('answer is correct');
+                socket.score += 1;
+                //Check if last person, if so compare to other person's timer
+                 
+                //If other person time is faster emit a message so that other person can add score
             }
-            socket.emit('answer is correct');
-            socket.score += 1;
             //timer.stop()
         } else {
-            socket.emit('answer is wrong!!!!');
+            socket.emit('answer is wrong');
         }
     });
+    socket.on('addScore', () => {
+        socket.score += 1;
+    })
     socket.on('reset', function() {
         socket.score = 0;
         //timer.reset()

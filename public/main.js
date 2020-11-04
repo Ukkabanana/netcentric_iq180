@@ -5,6 +5,10 @@ socket.on('connect', () => {
     socket.on('genNewNum', () => {
         console.log(socket.score);
     })
+    socket.on('sending number' , (numberSet)=> {
+        console.log("Number set received");
+    })
+
 });
 socket.on('disconnect', () => {
     console.log('Disconnected from Server!');
