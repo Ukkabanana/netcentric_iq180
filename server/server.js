@@ -168,7 +168,7 @@ io.on('connection', (socket) => {
         if(socket.type !== "host") return;
         var firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
         io.emit('Game is Starting');
-        io.emit(firstUser);
+        io.emit(firstUser.username);
         socket.emit(`Welcome ${socket.username}`);
         socket.score = 0;
 
@@ -213,7 +213,6 @@ io.on('connection', (socket) => {
             if(!answerIsWrong) {
                 //Check time
                 //Record time
-                //Stop time
                 console.log('answer is correct');
                 socket.emit('answer is correct');
                 socket.score += 1;
@@ -224,17 +223,18 @@ io.on('connection', (socket) => {
                     time: socket.timeUsed
                 }
                 
-                allUsers.forEach(element => { //Find fastest socket time
+                allUsers.forEach(element => {
                     if(element.timeUsed < fastestSocket.time){
                         fastestSocket.id = element.id;
                         fastestSocket.time = element.timeUsed;
                     }
                 });
                 if(fastestSocket.id === socket.id){
-                    socket.score += 1; //Your time is fastest, add your score
+                    socket.score += 1;
                 } else {
-                    socket.to(fastestSocket.id).emit('addScore'); //Other person time is faster emits a message so they can add score
+                    socket.to(fastestSocket.id).emit('addScore');
                 }
+                //If other person time is faster emit a message so that other person can add score
             }
             //timer.stop()
         } else {
