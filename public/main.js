@@ -22,3 +22,8 @@ button.addEventListener('click', function (e) {
     socket.emit('startTimer');
     console.log(socket);
 });
+
+const resetButton = document.getElementById('resetBut');
+resetButton.addEventListener('click', function () {
+    socket.emit('reset');
+});
