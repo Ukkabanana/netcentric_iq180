@@ -6,6 +6,7 @@ const stringMath = require('string-math'); //Treat a string as a math operation 
 const server = http.createServer(app);
 const path = require('path');
 const publicPath = path.join(__dirname, '/../public/');
+const ci = require('correcting-interval');
 var io = socketIO(server); //Initialize new instance of socket.io by passing in the Http object
 app.use(express.json());
 
@@ -107,7 +108,7 @@ function getListOfSocketsInRoom(room) {
     }
     return sockets;
 }
-
+var countdown = 60;
 var answer = 0;
 var globalNumberArray = [];
 let allUsers = [];
@@ -197,8 +198,8 @@ io.on('connection', (socket) => {
         //If timeout, don't accept answer
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
-        //let guess = stringMath(workingAnswer);
-        let guess = this.answer;
+        let guess = stringMath(workingAnswer);
+        
         if (guess === this.answer) {
             let answerIsWrong = false;
             console.log("global number array: ",globalNumberArray);
@@ -250,7 +251,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('startTimer', function() {
-        //start timer.
+        countdown = 60;
+        ci.setCorrectingInterval(function() {
+            countdown--;
+            io.sockets.emit('timer', { countdown: countdown });
+        },1000);
     });
     socket.on('timeout', function() {
         //Cycle next user
