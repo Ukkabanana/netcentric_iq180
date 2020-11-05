@@ -116,7 +116,7 @@ var numUsers = 0;
 var hostId = 0;
 
 var countdown = 61;
-var timerID;
+var timerID = true;
 
 
 io.on('connection', (socket) => {
@@ -253,18 +253,22 @@ io.on('connection', (socket) => {
         socket.score = 0;
         clearInterval(timerID);
         countdown = 61;
+        timerID = true;
     });
 
     socket.on('startTimer', function() {
-        timerID = setInterval(function() {
-            countdown--;
-            io.sockets.emit('timer', { countdown: countdown });
-            console.log(countdown);
-            if(countdown<=0){
-                clearInterval(timerID);
-                countdown = 61;
-            }
-          }, 1000);
+        if(timerID == true){
+            timerID = setInterval(function() {
+                countdown--;
+                io.sockets.emit('timer', { countdown: countdown });
+                console.log(countdown);
+                if(countdown<=0){
+                    clearInterval(timerID);
+                    countdown = 61;
+                    timerID = true;
+                }
+            }, 1000);
+        }
     });
     socket.on('timeout', function() {
         //Cycle next user
