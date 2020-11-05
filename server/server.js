@@ -114,6 +114,13 @@ let allUsers = [];
 var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
 var hostId = 0;
+
+var countdown = 60;
+setInterval(function() {
+  countdown--;
+  io.sockets.emit('timer', { countdown: countdown });
+}, 1000);
+
 io.on('connection', (socket) => {
     //Get list of all sockets in the given room
     
@@ -249,8 +256,9 @@ io.on('connection', (socket) => {
         //timer.reset()
     });
 
-    socket.on('startTimer', function() {
-        //start timer.
+    socket.on('startTimer', () => {
+        countdown = 60;
+        io.sockets.emit('timer', { countdown: countdown });
     });
     socket.on('timeout', function() {
         //Cycle next user
