@@ -85,7 +85,7 @@ const numberGenerator = () => {
         indexToBeChanged = (indexToBeChanged + 2) < 9 ? indexToBeChanged + 2: 1;
         
     };
-    for(i = 1; i<netEquation.length; i+=2){
+    for(let i = 1; i<netEquation.length; i+=2){
         opArray.push(netEquation[i]);
     }
     // console.log(netEquation.join(''), "\n");
@@ -95,16 +95,41 @@ const numberGenerator = () => {
     
     return [numberArray, opArray, answer, netEquation.join('')];
 }
+function getListOfSocketsInRoom(room) {
+    let sockets = [];
+    try {
+        let socketObj = io.sockets.adapter.rooms[room].sockets;
+        for (let id of Object.keys(socketObj)) {
+            sockets.push(io.sockets.connected[id]);
+        }
+    } catch (e) {
+        console.log(`Attempted to access non-existent room: ${room}`);
+    }
+    return sockets;
+}
 
 var answer = 0;
+var globalNumberArray = [];
 let allUsers = [];
 var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
 var hostId = 0;
 io.on('connection', (socket) => {
+    //Get list of all sockets in the given room
+    
+    
     var addedUser = false;
     console.log('A user just connected!!');
     socket.broadcast.emit('A user connected');
+
+    //Iterate through all rooms and get list of all sockets in there
+    let rooms = io.sockets.adapter.rooms;
+    for (let room of Object.keys(rooms)) {
+        // console.log('room');
+        // console.log('  ', rooms[room]);
+        allSockets = getListOfSocketsInRoom(room);
+    }
+
     //Listening on connection for incoming sockets
     // io.clients((error, clients) => {
     //     if (error) throw error;
@@ -119,12 +144,15 @@ io.on('connection', (socket) => {
         if(numUsers === 0){
             socket.type = "host";
             hostId = socket.id;
-            console.log(hostId);
+            console.log("Host's Id is",hostId);
         } else{
             socket.type = 'client';
         }
         socket.username = username;
-        allUsers.push(username);
+        allUsers.push(socket);
+        allUsers.forEach(element => {
+            console.log("ID: ",element.id, ": username: ",element.username)
+        });
         ++numUsers;
         addedUser = true;
         // echo globally (all clients except sender) that a person has connected
@@ -132,8 +160,10 @@ io.on('connection', (socket) => {
             username: socket.username,
             numUsers: numUsers,
         });
-        
+        socket.timeUsed = numUsers;
     });
+
+    //Start the game
     socket.on('gameStart', () => {
         if(socket.type !== "host") return;
         var firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
@@ -144,10 +174,12 @@ io.on('connection', (socket) => {
 
         //timer.start()
     });
+    
     //Generate the random number function
     socket.on('genNewNum', () => {
         console.log('genning new Num');
         let [numberArray, opArray, answer, netEquation] = numberGenerator();
+        globalNumberArray = numberArray;
         this.answer = answer; //from the var answer
         console.log('answer at gen new num ' + answer);
         var numberSet = {
@@ -155,22 +187,63 @@ io.on('connection', (socket) => {
             answers: answer,
         };
         
-        socket.emit(numberSet);
+        socket.emit('sending number', numberSet);
     });
+ 
+    //Check Answer function
     socket.on('sendAnswer', (workingAnswer) => {
+        
         //Check if timer has timeout
         //If timeout, don't accept answer
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
-        let guess = stringMath(workingAnswer)
+        //let guess = stringMath(workingAnswer);
+        let guess = this.answer;
         if (guess === this.answer) {
-            socket.emit('answer is correct');
-            socket.score += 1;
+            let answerIsWrong = false;
+            console.log("global number array: ",globalNumberArray);
+            for( i = 0; i < globalNumberArray.length; i++) {
+                if(!(workingAnswer.includes(globalNumberArray[i]))){
+                    answerIsWrong = true;
+                    console.log('answer is wrong');
+                    socket.emit('answer is wrong');
+                    break;
+                } 
+            };
+            if(!answerIsWrong) {
+                //Check time
+                //Record time
+                //Stop time
+                console.log('answer is correct');
+                socket.emit('answer is correct');
+                socket.score += 1;
+                //Check if last person, 
+                //if so compare to other person's timer
+                var fastestSocket = {
+                    id: socket.id,
+                    time: socket.timeUsed
+                }
+                
+                allUsers.forEach(element => { //Find fastest socket time
+                    if(element.timeUsed < fastestSocket.time){
+                        fastestSocket.id = element.id;
+                        fastestSocket.time = element.timeUsed;
+                    }
+                });
+                if(fastestSocket.id === socket.id){
+                    socket.score += 1; //Your time is fastest, add your score
+                } else {
+                    socket.to(fastestSocket.id).emit('addScore'); //Other person time is faster emits a message so they can add score
+                }
+            }
             //timer.stop()
         } else {
-            socket.emit('answer is wrong!!!!');
+            socket.emit('answer is wrong');
         }
     });
+    socket.on('addScore', () => {
+        socket.score += 1;
+    })
     socket.on('reset', function() {
         socket.score = 0;
         //timer.reset()
