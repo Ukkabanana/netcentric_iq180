@@ -168,7 +168,7 @@ io.on('connection', (socket) => {
         if(socket.type !== "host") return;
         var firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
         io.emit('Game is Starting');
-        io.emit(firstUser);
+        io.emit(firstUser.username);
         socket.emit(`Welcome ${socket.username}`);
         socket.score = 0;
 
