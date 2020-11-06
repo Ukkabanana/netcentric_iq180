@@ -149,6 +149,7 @@ io.on('connection', (socket) => {
 
         //Store username
         socket.username = username;
+        socket.hasCorrectAnswer = false;
         //Array that stores the socket object for all sockets inside the network.
         allUsers.push(socket);
         allUsers.forEach(element => {
@@ -172,6 +173,9 @@ io.on('connection', (socket) => {
             socket.emit('#notHost');
             return;
         };
+        allUsers.forEach((user) => {
+            user.hasCorrectAnswer = false;
+        })
         console.log('executing game start')
         //Randomizes first user
         firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
@@ -201,11 +205,10 @@ io.on('connection', (socket) => {
  
     //Check Answer function
     socket.on('sendAnswer', (workingAnswer) => {
+        socket.hasCorrectAnswer = false;
         ci.clearCorrectingInterval(timerID);
         if(countdown <= 0) {
             return;
-        } else {
-            socket.timeUsed = countdown;
         }
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
@@ -225,7 +228,7 @@ io.on('connection', (socket) => {
                 } 
             };
             if(!answerIsWrong) {
-                //Record time
+                socket.hasCorrectAnswer = true;
                 socket.timeUsed = countdown;
                 console.log('answer is correct');
                 socket.emit('#correctAnswer');
@@ -252,6 +255,11 @@ io.on('connection', (socket) => {
 
         } else {
             socket.emit('#wrongAnswer');
+            allUsers.forEach((user)=> {
+                if(user.id !== socket.id && user.hasCorrectAnswer === true){
+                    io.to(user.id).emit('addScore');
+                }
+            })
         }
     });
     socket.on('addScore', () => {
