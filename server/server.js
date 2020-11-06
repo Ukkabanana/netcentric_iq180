@@ -120,7 +120,7 @@ var countdown = 61;
 var timerID = true;
 
 io.on('connection', (socket) => {
-    var firstUser;
+    var currentUser;
     var addedUser = false;
     console.log('A user just connected!!');
     socket.broadcast.emit('A user connected');
@@ -178,10 +178,10 @@ io.on('connection', (socket) => {
         })
         console.log('executing game start')
         //Randomizes first user
-        firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
+        currentUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
         //Send to everyone that game is starting
         io.emit('Game is Starting');
-        io.emit('#firstUser', firstUser.username);
+        io.emit('#firstUser', currentUser.username);
         socket.emit(`Welcome ${socket.username}`);
         socket.score = 0;
 
