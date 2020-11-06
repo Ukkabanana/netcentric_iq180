@@ -250,9 +250,13 @@ io.on('connection', (socket) => {
         socket.score += 1;
     })
     socket.on('reset', function() {
-        socket.timeUsed = 0;
-        socket.score = 0;
-        countdown = 60;
+        if(socket.type !== 'host') return;
+
+        allUsers.forEach((element) => {
+            element.timeUsed = 0;
+            element.score = 0;
+        })
+        
     });
 
     socket.on('startTimer', function() {
