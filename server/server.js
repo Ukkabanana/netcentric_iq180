@@ -117,7 +117,7 @@ var numUsers = 0;
 var hostId = "";
 
 var countdown = 61;
-var timerID = false;
+var timerID = true;
 
 io.on('connection', (socket) => {
     var firstUser;
