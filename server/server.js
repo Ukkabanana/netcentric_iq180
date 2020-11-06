@@ -114,7 +114,12 @@ var globalNumberArray = [];
 let allUsers = [];
 var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
+
 var hostId = "";
+
+var countdown = 61;
+var timerID = true;
+
 io.on('connection', (socket) => {
     //Get list of all sockets in the given room
     
@@ -256,16 +261,28 @@ io.on('connection', (socket) => {
             element.timeUsed = 0;
             element.score = 0;
         })
-        
+        socket.score = 0;
+        ci.clearCorrectingInterval(timerID);
+        countdown = 61;
+        timerID = true;
     });
 
     socket.on('startTimer', function() {
-        countdown = 60;
-        ci.setCorrectingInterval(function() {
-            countdown--;
-            io.sockets.emit('timer', { countdown: countdown });
-        },1000);
+        if(timerID == true){
+            timerID = ci.setCorrectingInterval(function() {
+                countdown--;
+                io.sockets.emit('timer', { countdown: countdown });
+                console.log(countdown);
+                if(countdown<=0){
+                    ci.clearCorrectingInterval(timerID);
+                    countdown = 61;
+                    timerID = true;
+                }
+            }, 1000);
+        }
+  
     });
+
     
 
     socket.on('disconnect', () => {
