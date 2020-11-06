@@ -241,7 +241,7 @@ io.on('connection', (socket) => {
                     socket.to(fastestSocket.id).emit('addScore');
                 }
             }
-            
+
         } else {
             socket.emit('answer is wrong');
         }
@@ -252,7 +252,7 @@ io.on('connection', (socket) => {
     socket.on('reset', function() {
         socket.timeUsed = 0;
         socket.score = 0;
-        //timer.reset()
+        countdown = 60;
     });
 
     socket.on('startTimer', function() {
