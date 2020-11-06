@@ -114,7 +114,7 @@ var globalNumberArray = [];
 let allUsers = [];
 var numUsers = 0;
 //Io refers to the httpServer socket refers to the current client's socket
-var hostId = 0;
+var hostId = "";
 io.on('connection', (socket) => {
     //Get list of all sockets in the given room
     
@@ -131,17 +131,11 @@ io.on('connection', (socket) => {
         allSockets = getListOfSocketsInRoom(room);
     }
 
-    //Listening on connection for incoming sockets
-    // io.clients((error, clients) => {
-    //     if (error) throw error;
-    //     console.log(clients); // => [6em3d4TJP8Et9EMNAAAA, G5p55dHhGgUnLUctAAAB]
-    // });
-
     //Client requests to add a new user.
     socket.on('add user', (username) => {
         if (addedUser) return;
 
-        // we store the username in the socket session for this client
+        //If user is the first person to join, make them the host and log their id.
         if(numUsers === 0){
             socket.type = "host";
             hostId = socket.id;
@@ -149,27 +143,35 @@ io.on('connection', (socket) => {
         } else{
             socket.type = 'client';
         }
+
+        //Store username
         socket.username = username;
+        //Array that stores the socket object for all sockets inside the network.
         allUsers.push(socket);
         allUsers.forEach(element => {
             console.log("ID: ",element.id, ": username: ",element.username)
         });
         ++numUsers;
+        //Mark that user has been added then emit to everybody that a new dude joined.
         addedUser = true;
-        // echo globally (all clients except sender) that a person has connected
         socket.broadcast.emit('A user joined', {
             username: socket.username,
             numUsers: numUsers,
         });
-        socket.timeUsed = numUsers;
+        socket.timeUsed = numUsers; //For testing purposes
     });
 
     //Start the game
-    socket.on('gameStart', () => {
-        if(socket.type !== "host") return;
+    socket.on('gameStart', (socketId) => {
+        hostSocket = allUsers.find((socket)=> {
+            return socket.id === socketId;
+        });
+        if(hostSocket.type !== "host") return;
+        //Randomizes first user
         var firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
+        //Send to everyone that game is starting
         io.emit('Game is Starting');
-        io.emit(firstUser.username);
+        io.emit('#firstUser', firstUser.username);
         socket.emit(`Welcome ${socket.username}`);
         socket.score = 0;
 
@@ -198,13 +200,15 @@ io.on('connection', (socket) => {
         //If timeout, don't accept answer
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
+        //Computes the returned answer.
         let guess = stringMath(workingAnswer);
-        
+        //Check if it matches the stored answer.
         if (guess === this.answer) {
             let answerIsWrong = false;
             console.log("global number array: ",globalNumberArray);
+            //Check if the answer string uses all the require digits.
             for( i = 0; i < globalNumberArray.length; i++) {
-                if(!(workingAnswer.includes(globalNumberArray[i]))){
+                if(!(workingAnswer.includes(globalNumberArray[i].toString()))){
                     answerIsWrong = true;
                     console.log('answer is wrong');
                     socket.emit('answer is wrong');
