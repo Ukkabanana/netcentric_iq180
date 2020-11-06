@@ -108,7 +108,6 @@ function getListOfSocketsInRoom(room) {
     }
     return sockets;
 }
-var countdown = 60;
 var answer = 0;
 var globalNumberArray = [];
 let allUsers = [];
@@ -118,12 +117,10 @@ var numUsers = 0;
 var hostId = "";
 
 var countdown = 61;
-var timerID = true;
+var timerID = false;
 
 io.on('connection', (socket) => {
-    //Get list of all sockets in the given room
-    
-    
+    var firstUser;
     var addedUser = false;
     console.log('A user just connected!!');
     socket.broadcast.emit('A user connected');
@@ -138,6 +135,7 @@ io.on('connection', (socket) => {
 
     //Client requests to add a new user.
     socket.on('add user', (username) => {
+        //Check if within this connection session, the user was already added
         if (addedUser) return;
 
         //If user is the first person to join, make them the host and log their id.
@@ -159,21 +157,24 @@ io.on('connection', (socket) => {
         ++numUsers;
         //Mark that user has been added then emit to everybody that a new dude joined.
         addedUser = true;
-        socket.broadcast.emit('A user joined', {
+        socket.broadcast.emit('userJoined', {
+            id: socket.id,
             username: socket.username,
+            type: socket.type,
             numUsers: numUsers,
         });
         socket.timeUsed = numUsers; //For testing purposes
     });
 
     //Start the game
-    socket.on('gameStart', (socketId) => {
-        hostSocket = allUsers.find((socket)=> {
-            return socket.id === socketId;
-        });
-        if(hostSocket.type !== "host") return;
+    socket.on('gameStart', () => {
+        if(socket.type !== 'host') {
+            socket.emit('#notHost');
+            return;
+        };
+        console.log('executing game start')
         //Randomizes first user
-        var firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
+        firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
         //Send to everyone that game is starting
         io.emit('Game is Starting');
         io.emit('#firstUser', firstUser.username);
@@ -200,9 +201,12 @@ io.on('connection', (socket) => {
  
     //Check Answer function
     socket.on('sendAnswer', (workingAnswer) => {
-        
-        //Check if timer has timeout
-        //If timeout, don't accept answer
+        ci.clearCorrectingInterval(timerID);
+        if(countdown <= 0) {
+            return;
+        } else {
+            socket.timeUsed = countdown;
+        }
         //If not stop the timer
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
@@ -243,12 +247,12 @@ io.on('connection', (socket) => {
                 if (fastestSocket.id === socket.id) { //User is fastest socket
                     socket.score += 1;
                 } else { //User is not fastest socket, tell other socket to add score.
-                    socket.to(fastestSocket.id).emit('addScore');
+                    io.to(fastestSocket.id).emit('addScore');
                 }
             }
 
         } else {
-            socket.emit('answer is wrong');
+            socket.emit('#wrongAnswer');
         }
     });
     socket.on('addScore', () => {
