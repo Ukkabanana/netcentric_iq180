@@ -9,7 +9,7 @@ const publicPath = path.join(__dirname, '/../public/');
 const ci = require('correcting-interval');
 var io = socketIO(server); //Initialize new instance of socket.io by passing in the Http object
 app.use(express.json());
-
+ 
 app.use(express.static(publicPath));
 
 
@@ -207,7 +207,6 @@ io.on('connection', (socket) => {
         } else {
             socket.timeUsed = countdown;
         }
-        //If not stop the timer
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
         //Computes the returned answer.
