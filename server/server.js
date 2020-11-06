@@ -229,7 +229,7 @@ io.on('connection', (socket) => {
             };
             if(!answerIsWrong) {
                 socket.hasCorrectAnswer = true;
-                socket.timeUsed = countdown;
+                socket.timeUsed = 60-countdown;
                 console.log('answer is correct');
                 socket.emit('#correctAnswer');
                 socket.score += 1;
