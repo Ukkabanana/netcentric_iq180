@@ -198,6 +198,7 @@ io.on('connection', (socket) => {
         
         //Check if timer has timeout
         //If timeout, don't accept answer
+        //If not stop the timer
         //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
         //Computes the returned answer.
@@ -211,30 +212,30 @@ io.on('connection', (socket) => {
                 if(!(workingAnswer.includes(globalNumberArray[i].toString()))){
                     answerIsWrong = true;
                     console.log('answer is wrong');
-                    socket.emit('answer is wrong');
+                    socket.emit('#wrongAnswer');
                     break;
                 } 
             };
             if(!answerIsWrong) {
-                //Check time
                 //Record time
+                socket.timeUsed = countdown;
                 console.log('answer is correct');
-                socket.emit('answer is correct');
+                socket.emit('#correctAnswer');
                 socket.score += 1;
-                //Check if last person, 
+                //Check if last person,
                 //if so compare to other person's timer
                 var fastestSocket = {
                     id: socket.id,
-                    time: socket.timeUsed
-                }
-                
-                allUsers.forEach(element => {
-                    if(element.timeUsed < fastestSocket.time){
+                    time: socket.timeUsed,
+                };
+
+                allUsers.forEach((element) => {
+                    if (element.timeUsed < fastestSocket.time) {
                         fastestSocket.id = element.id;
                         fastestSocket.time = element.timeUsed;
                     }
                 });
-                if(fastestSocket.id === socket.id){
+                if (fastestSocket.id === socket.id) {
                     socket.score += 1;
                 } else {
                     socket.to(fastestSocket.id).emit('addScore');
@@ -250,6 +251,7 @@ io.on('connection', (socket) => {
         socket.score += 1;
     })
     socket.on('reset', function() {
+        socket.timeUsed = 0;
         socket.score = 0;
         //timer.reset()
     });
