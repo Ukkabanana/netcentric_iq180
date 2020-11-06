@@ -228,21 +228,20 @@ io.on('connection', (socket) => {
                     id: socket.id,
                     time: socket.timeUsed,
                 };
-
+                //Find fastest socket.
                 allUsers.forEach((element) => {
                     if (element.timeUsed < fastestSocket.time) {
                         fastestSocket.id = element.id;
                         fastestSocket.time = element.timeUsed;
                     }
                 });
-                if (fastestSocket.id === socket.id) {
+                if (fastestSocket.id === socket.id) { //User is fastest socket
                     socket.score += 1;
-                } else {
+                } else { //User is not fastest socket, tell other socket to add score.
                     socket.to(fastestSocket.id).emit('addScore');
                 }
-                //If other person time is faster emit a message so that other person can add score
             }
-            //timer.stop()
+            
         } else {
             socket.emit('answer is wrong');
         }
