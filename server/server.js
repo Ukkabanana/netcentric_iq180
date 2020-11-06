@@ -257,12 +257,7 @@ io.on('connection', (socket) => {
             io.sockets.emit('timer', { countdown: countdown });
         },1000);
     });
-    socket.on('timeout', function() {
-        //Cycle next user
-        //Reset timer
-        //Stop accepting input
-        //continue;
-    })
+    
 
     socket.on('disconnect', () => {
         //On disconnect socket
