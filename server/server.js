@@ -6,6 +6,7 @@ const stringMath = require('string-math'); //Treat a string as a math operation 
 const server = http.createServer(app);
 const path = require('path');
 const publicPath = path.join(__dirname, '/../public/');
+const ci = require('correcting-interval');
 var io = socketIO(server); //Initialize new instance of socket.io by passing in the Http object
 app.use(express.json());
 
@@ -251,19 +252,19 @@ io.on('connection', (socket) => {
     })
     socket.on('reset', function() {
         socket.score = 0;
-        clearInterval(timerID);
+        ci.clearCorrectingInterval(timerID);
         countdown = 61;
         timerID = true;
     });
 
     socket.on('startTimer', function() {
         if(timerID == true){
-            timerID = setInterval(function() {
+            timerID = ci.setCorrectingInterval(function() {
                 countdown--;
                 io.sockets.emit('timer', { countdown: countdown });
                 console.log(countdown);
                 if(countdown<=0){
-                    clearInterval(timerID);
+                    ci.clearCorrectingInterval(timerID);
                     countdown = 61;
                     timerID = true;
                 }
