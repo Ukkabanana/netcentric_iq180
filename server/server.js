@@ -198,7 +198,7 @@ io.on('connection', (socket) => {
             numbers: numberArray,
             answers: answer,
         };
-        io.to(socket.id).emit('startTimer');
+        
         socket.emit('#sendingNumber', numberSet);
     });
  
@@ -206,9 +206,15 @@ io.on('connection', (socket) => {
     socket.on('sendAnswer', (workingAnswer) => {
         socket.hasCorrectAnswer = false;
         ci.clearCorrectingInterval(timerID);
-        if(countdown <= 0 || currentUser.id !== socket.id) {
+        if(countdown <= 0 ) {
+            io.emit('timeout');
             return;
         }
+        if( currentUser.id !== socket.id ) {
+            io.emit('notCurrentUser');
+            return;
+        }
+        
         console.log('The user guessed ' + workingAnswer);
 
         //Computes the returned answer.
@@ -228,33 +234,40 @@ io.on('connection', (socket) => {
                 } 
             };
             if(!answerIsWrong) {
-                var isLastUser = !(allUsers.some((user) => { //Negated, so true if all user has answered
-                    return (user.id !== socket.id) && (user.hasCorrectAnswer === false); //true if at least one user hasn't answered
-                }))
+                var isLastUser = !allUsers.some((user) => {
+                    //Negated, so true if all user has answered
+                    return (
+                        user.id !== socket.id && user.hasCorrectAnswer === false
+                    ); //true if at least one user hasn't answered
+                });
+                
                 socket.hasCorrectAnswer = true;
                 socket.timeUsed = 60-countdown;
                 console.log('answer is correct');
                 socket.emit('correctAnswer');
+                currentUser = allUsers.find((element)=>{
+                    return (element.hasCorrectAnswer === false && element.id !== socket.id);
+                })
                 socket.score += 1;
                 //Check if last person,
-
-
+                if(isLastUser){
                 //if so compare to other person's timer
-                var fastestSocket = {
-                    id: socket.id,
-                    time: socket.timeUsed,
-                };
-                //Find fastest socket.
-                allUsers.forEach((element) => {
-                    if (element.timeUsed < fastestSocket.time) {
-                        fastestSocket.id = element.id;
-                        fastestSocket.time = element.timeUsed;
+                    var fastestSocket = {
+                        id: socket.id,
+                        time: socket.timeUsed,
+                    };
+                    //Find fastest socket.
+                    allUsers.forEach((element) => {
+                        if (element.timeUsed < fastestSocket.time) {
+                            fastestSocket.id = element.id;
+                            fastestSocket.time = element.timeUsed;
+                        }
+                    });
+                    if (fastestSocket.id === socket.id) { //User is fastest socket
+                        socket.score += 1;
+                    } else { //User is not fastest socket, tell other socket to add score.
+                        io.to(fastestSocket.id).emit('addScore');
                     }
-                });
-                if (fastestSocket.id === socket.id) { //User is fastest socket
-                    socket.score += 1;
-                } else { //User is not fastest socket, tell other socket to add score.
-                    io.to(fastestSocket.id).emit('addScore');
                 }
             }
 
@@ -270,18 +283,29 @@ io.on('connection', (socket) => {
     });
     socket.on('addScore', () => {
         socket.score += 1;
+        console.log(socket.score);
     })
     socket.on('reset', function() {
-        if(socket.type !== 'host') return;
-
-        allUsers.forEach((element) => {
-            element.timeUsed = 0;
-            element.score = 0;
-        })
-        socket.score = 0;
-        ci.clearCorrectingInterval(timerID);
-        countdown = 61;
-        timerID = true;
+        if(socket.type !== 'host'){ 
+            socket.emit('notHost');
+            return
+        };
+        try {
+            allUsers.forEach((element) => {
+                element.timeUsed = 0;
+                element.score = 0;
+                element.hasCorrectAnswer = false;
+            });
+            socket.score = 0;
+            ci.clearCorrectingInterval(timerID);
+            countdown = 61;
+            timerID = true;
+            socket.emit('resetSuccess');
+        } catch (error) {
+            socket.emit('resetError');
+        } 
+        
+        
     });
 
     socket.on('startTimer', function() {
@@ -292,13 +316,13 @@ io.on('connection', (socket) => {
                 io.sockets.emit('#timer', { countdown: countdown });
                 console.log(countdown);
                 if(countdown<=0){
+                    io.emit('timeout');
                     ci.clearCorrectingInterval(timerID);
                     countdown = 61;
                     timerID = true;
                 }
             }, 1000);
         }
-  
     });
 
     
