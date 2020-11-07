@@ -123,7 +123,7 @@ io.on('connection', (socket) => {
     var currentUser;
     var addedUser = false;
     console.log('A user just connected!!');
-    socket.broadcast.emit('A user connected');
+    socket.broadcast.emit('userConnected');
 
     //Iterate through all rooms and get list of all sockets in there
     let rooms = io.sockets.adapter.rooms;
@@ -134,7 +134,7 @@ io.on('connection', (socket) => {
     }
 
     //Client requests to add a new user.
-    socket.on('add user', (username) => {
+    socket.on('addUser', (username) => {
         //Check if within this connection session, the user was already added
         if (addedUser) return;
 
@@ -158,19 +158,18 @@ io.on('connection', (socket) => {
         ++numUsers;
         //Mark that user has been added then emit to everybody that a new dude joined.
         addedUser = true;
-        socket.broadcast.emit('userJoined', {
-            id: socket.id,
+        socket.broadcast.emit('#userJoined', {
             username: socket.username,
             type: socket.type,
             numUsers: numUsers,
         });
-        socket.timeUsed = numUsers; //For testing purposes
+        
     });
 
     //Start the game
     socket.on('gameStart', () => {
         if(socket.type !== 'host') {
-            socket.emit('#notHost');
+            socket.emit('notHost');
             return;
         };
         allUsers.forEach((user) => {
@@ -180,9 +179,9 @@ io.on('connection', (socket) => {
         //Randomizes first user
         currentUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
         //Send to everyone that game is starting
-        io.emit('Game is Starting');
+        io.emit('gameStarting');
         io.emit('#firstUser', currentUser.username);
-        socket.emit(`Welcome ${socket.username}`);
+        socket.emit('#welcomeMessage',`Welcome ${socket.username}`);
         socket.score = 0;
 
         //timer.start()
@@ -200,7 +199,7 @@ io.on('connection', (socket) => {
             answers: answer,
         };
         
-        socket.emit('sending number', numberSet);
+        socket.emit('#sendingNumber', numberSet);
     });
  
     //Check Answer function
@@ -224,7 +223,7 @@ io.on('connection', (socket) => {
                 if(!(workingAnswer.includes(globalNumberArray[i].toString()))){
                     answerIsWrong = true;
                     console.log('answer is wrong');
-                    socket.emit('#wrongAnswer');
+                    socket.emit('wrongAnswer');
                     break;
                 } 
             };
@@ -235,7 +234,7 @@ io.on('connection', (socket) => {
                 socket.hasCorrectAnswer = true;
                 socket.timeUsed = 60-countdown;
                 console.log('answer is correct');
-                socket.emit('#correctAnswer');
+                socket.emit('correctAnswer');
                 socket.score += 1;
                 //Check if last person,
 
@@ -260,7 +259,7 @@ io.on('connection', (socket) => {
             }
 
         } else {
-            socket.emit('#wrongAnswer');
+            socket.emit('wrongAnswer');
             allUsers.forEach((user)=> {
                 if(user.id !== socket.id && user.hasCorrectAnswer === true){
                     io.to(user.id).emit('addScore');
@@ -289,7 +288,8 @@ io.on('connection', (socket) => {
         if(timerID == true){
             timerID = ci.setCorrectingInterval(function() {
                 countdown--;
-                io.sockets.emit('timer', { countdown: countdown });
+                socket.emit('timerStarting')
+                io.sockets.emit('#timer', { countdown: countdown });
                 console.log(countdown);
                 if(countdown<=0){
                     ci.clearCorrectingInterval(timerID);
@@ -310,8 +310,8 @@ io.on('connection', (socket) => {
             --numUsers
         };
         console.log('user disconnected');
-        socket.broadcast.emit('A user disconnected');
-        socket.broadcast.emit(numUsers);
+        socket.broadcast.emit('userDisconnected');
+        socket.broadcast.emit('#numUsers', numUsers);
     });
 });
 
