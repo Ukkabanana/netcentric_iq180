@@ -205,7 +205,7 @@ io.on('connection', (socket) => {
     //Check Answer function
     socket.on('sendAnswer', (workingAnswer) => {
         socket.hasCorrectAnswer = false;
-        ci.clearCorrectingInterval(timerID);
+        
         if(countdown <= 0 ) {
             io.emit('timeout');
             return;
@@ -230,19 +230,7 @@ io.on('connection', (socket) => {
                     answerIsWrong = true;
                     console.log('answer is wrong');
                     socket.emit('wrongAnswer');
-                    timerID = ci.setCorrectingInterval(function () {
-                            countdown--;
-                            socket.emit('timerStarting');
-                            io.sockets.emit('#timer', { countdown: countdown });
-                            console.log(countdown);
-                            if (countdown <= 0) {
-                                io.emit('timeout');
-                                ci.clearCorrectingInterval(timerID);
-                                countdown = 61;
-                                timerID = true;
-                            }
-                        },1000);
-                    break;
+                    
                 } 
             };
             if(!answerIsWrong) {
@@ -252,11 +240,12 @@ io.on('connection', (socket) => {
                         user.id !== socket.id && user.hasCorrectAnswer === false
                     ); //true if at least one user hasn't answered
                 });
-                
+                ci.clearCorrectingInterval(timerID);
                 socket.hasCorrectAnswer = true;
                 socket.timeUsed = 60-countdown;
                 console.log('answer is correct');
                 socket.emit('correctAnswer');
+                
                 if(!isLastUser){
                     currentUser = allUsers.find((element)=>{
                         return (element.hasCorrectAnswer === false && element.id !== socket.id);
