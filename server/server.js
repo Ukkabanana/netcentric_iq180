@@ -230,7 +230,18 @@ io.on('connection', (socket) => {
                     answerIsWrong = true;
                     console.log('answer is wrong');
                     socket.emit('wrongAnswer');
-                    //Restart timer
+                    timerID = ci.setCorrectingInterval(function () {
+                            countdown--;
+                            socket.emit('timerStarting');
+                            io.sockets.emit('#timer', { countdown: countdown });
+                            console.log(countdown);
+                            if (countdown <= 0) {
+                                io.emit('timeout');
+                                ci.clearCorrectingInterval(timerID);
+                                countdown = 61;
+                                timerID = true;
+                            }
+                        },1000);
                     break;
                 } 
             };
