@@ -1,8 +1,8 @@
 var socket = io();
 socket.on('connect', () => {
-    console.log('changes');
+    // console.log('changes');
     console.log('Connected to Server!');
-    socket.emit('add user',"Anon");
+    socket.emit('addUser',"Anon");
     socket.on('genNewNum', () => {
         console.log(socket.score);
     })
@@ -16,10 +16,7 @@ button.addEventListener('click', function (e) {
     console.log(socket.id);
     socket.emit('gameStart');
     socket.emit('genNewNum');
-    socket.emit('startTimer');
-    setTimeout(() => {
-        socket.emit('sendAnswer', '10');
-    }, 2000);
+    
     
     // console.log(socket);
 });

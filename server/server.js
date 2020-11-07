@@ -118,9 +118,9 @@ var hostId = "";
 
 var countdown = 61;
 var timerID = true;
-
+var currentUser;
 io.on('connection', (socket) => {
-    var currentUser;
+    
     var addedUser = false;
     console.log('A user just connected!!');
     socket.broadcast.emit('userConnected');
@@ -198,7 +198,7 @@ io.on('connection', (socket) => {
             numbers: numberArray,
             answers: answer,
         };
-        
+        io.to(socket.id).emit('startTimer');
         socket.emit('#sendingNumber', numberSet);
     });
  
