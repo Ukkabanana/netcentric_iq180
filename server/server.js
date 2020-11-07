@@ -207,13 +207,14 @@ io.on('connection', (socket) => {
     socket.on('sendAnswer', (workingAnswer) => {
         socket.hasCorrectAnswer = false;
         ci.clearCorrectingInterval(timerID);
-        if(countdown <= 0) {
+        if(countdown <= 0 || currentUser.id !== socket.id) {
             return;
         }
-        //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
+
         //Computes the returned answer.
         let guess = stringMath(workingAnswer);
+
         //Check if it matches the stored answer.
         if (guess === this.answer) {
             let answerIsWrong = false;
@@ -228,12 +229,17 @@ io.on('connection', (socket) => {
                 } 
             };
             if(!answerIsWrong) {
+                var isLastUser = !(allUsers.some((user) => { //Negated, so true if all user has answered
+                    return (user.id !== socket.id) && (user.hasCorrectAnswer === false); //true if at least one user hasn't answered
+                }))
                 socket.hasCorrectAnswer = true;
                 socket.timeUsed = 60-countdown;
                 console.log('answer is correct');
                 socket.emit('#correctAnswer');
                 socket.score += 1;
                 //Check if last person,
+
+
                 //if so compare to other person's timer
                 var fastestSocket = {
                     id: socket.id,
@@ -261,6 +267,7 @@ io.on('connection', (socket) => {
                 }
             })
         }
+        
     });
     socket.on('addScore', () => {
         socket.score += 1;
