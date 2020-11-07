@@ -206,7 +206,7 @@ io.on('connection', (socket) => {
     socket.on('sendAnswer', (workingAnswer) => {
         socket.hasCorrectAnswer = false;
         
-        if(countdown <= 0 ) {
+        if(countdown <= 1 ) {
             io.emit('timeout');
             return;
         }
@@ -314,13 +314,14 @@ io.on('connection', (socket) => {
     });
 
     socket.on('startTimer', function() {
+        socket.emit('timerStarting');
         if(timerID == true){
             timerID = ci.setCorrectingInterval(function() {
                 countdown--;
-                socket.emit('timerStarting')
+                
                 io.sockets.emit('#timer', { countdown: countdown });
                 console.log(countdown);
-                if(countdown<=0){
+                if(countdown<=1){
                     io.emit('timeout');
                     ci.clearCorrectingInterval(timerID);
                     countdown = 61;

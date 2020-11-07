@@ -17,7 +17,7 @@ button.addEventListener('click', function (e) {
     socket.emit('gameStart');
     socket.emit('genNewNum');
     socket.emit('addScore');
-    
+    socket.emit('startTimer');
     
     // console.log(socket);
 });
