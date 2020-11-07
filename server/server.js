@@ -230,6 +230,7 @@ io.on('connection', (socket) => {
                     answerIsWrong = true;
                     console.log('answer is wrong');
                     socket.emit('wrongAnswer');
+                    //Restart timer
                     break;
                 } 
             };
