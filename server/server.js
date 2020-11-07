@@ -245,9 +245,12 @@ io.on('connection', (socket) => {
                 socket.timeUsed = 60-countdown;
                 console.log('answer is correct');
                 socket.emit('correctAnswer');
-                currentUser = allUsers.find((element)=>{
-                    return (element.hasCorrectAnswer === false && element.id !== socket.id);
-                })
+                if(!isLastUser){
+                    currentUser = allUsers.find((element)=>{
+                        return (element.hasCorrectAnswer === false && element.id !== socket.id);
+                    })
+                    socket.emit('#nextUser', currentUser.id);
+                }
                 socket.score += 1;
                 //Check if last person,
                 if(isLastUser){
