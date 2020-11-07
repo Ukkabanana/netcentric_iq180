@@ -9,7 +9,7 @@ const publicPath = path.join(__dirname, '/../public/');
 const ci = require('correcting-interval');
 var io = socketIO(server); //Initialize new instance of socket.io by passing in the Http object
 app.use(express.json());
-
+ 
 app.use(express.static(publicPath));
 
 
@@ -108,7 +108,6 @@ function getListOfSocketsInRoom(room) {
     }
     return sockets;
 }
-var countdown = 60;
 var answer = 0;
 var globalNumberArray = [];
 let allUsers = [];
@@ -119,14 +118,12 @@ var hostId = "";
 
 var countdown = 61;
 var timerID = true;
-
+var currentUser;
 io.on('connection', (socket) => {
-    //Get list of all sockets in the given room
-    
     
     var addedUser = false;
     console.log('A user just connected!!');
-    socket.broadcast.emit('A user connected');
+    socket.broadcast.emit('userConnected');
 
     //Iterate through all rooms and get list of all sockets in there
     let rooms = io.sockets.adapter.rooms;
@@ -137,7 +134,8 @@ io.on('connection', (socket) => {
     }
 
     //Client requests to add a new user.
-    socket.on('add user', (username) => {
+    socket.on('addUser', (username) => {
+        //Check if within this connection session, the user was already added
         if (addedUser) return;
 
         //If user is the first person to join, make them the host and log their id.
@@ -151,6 +149,7 @@ io.on('connection', (socket) => {
 
         //Store username
         socket.username = username;
+        socket.hasCorrectAnswer = false;
         //Array that stores the socket object for all sockets inside the network.
         allUsers.push(socket);
         allUsers.forEach(element => {
@@ -159,25 +158,30 @@ io.on('connection', (socket) => {
         ++numUsers;
         //Mark that user has been added then emit to everybody that a new dude joined.
         addedUser = true;
-        socket.broadcast.emit('A user joined', {
+        socket.broadcast.emit('#userJoined', {
             username: socket.username,
+            type: socket.type,
             numUsers: numUsers,
         });
-        socket.timeUsed = numUsers; //For testing purposes
+        
     });
 
     //Start the game
-    socket.on('gameStart', (socketId) => {
-        hostSocket = allUsers.find((socket)=> {
-            return socket.id === socketId;
-        });
-        if(hostSocket.type !== "host") return;
+    socket.on('gameStart', () => {
+        if(socket.type !== 'host') {
+            socket.emit('notHost');
+            return;
+        };
+        allUsers.forEach((user) => {
+            user.hasCorrectAnswer = false;
+        })
+        console.log('executing game start')
         //Randomizes first user
-        var firstUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
+        currentUser = allUsers[Math.floor(Math.random()*(allUsers.length-1))]
         //Send to everyone that game is starting
-        io.emit('Game is Starting');
-        io.emit('#firstUser', firstUser.username);
-        socket.emit(`Welcome ${socket.username}`);
+        io.emit('gameStarting');
+        io.emit('#firstUser', currentUser.username);
+        socket.emit('#welcomeMessage',`Welcome ${socket.username}`);
         socket.score = 0;
 
         //timer.start()
@@ -195,19 +199,27 @@ io.on('connection', (socket) => {
             answers: answer,
         };
         
-        socket.emit('sending number', numberSet);
+        socket.emit('#sendingNumber', numberSet);
     });
  
     //Check Answer function
     socket.on('sendAnswer', (workingAnswer) => {
+        socket.hasCorrectAnswer = false;
+        ci.clearCorrectingInterval(timerID);
+        if(countdown <= 0 ) {
+            io.emit('timeout');
+            return;
+        }
+        if( currentUser.id !== socket.id ) {
+            io.emit('notCurrentUser');
+            return;
+        }
         
-        //Check if timer has timeout
-        //If timeout, don't accept answer
-        //If not stop the timer
-        //Check if user is current player, if not don't accept answer
         console.log('The user guessed ' + workingAnswer);
+
         //Computes the returned answer.
         let guess = stringMath(workingAnswer);
+
         //Check if it matches the stored answer.
         if (guess === this.answer) {
             let answerIsWrong = false;
@@ -217,70 +229,116 @@ io.on('connection', (socket) => {
                 if(!(workingAnswer.includes(globalNumberArray[i].toString()))){
                     answerIsWrong = true;
                     console.log('answer is wrong');
-                    socket.emit('#wrongAnswer');
+                    socket.emit('wrongAnswer');
+                    timerID = ci.setCorrectingInterval(function () {
+                            countdown--;
+                            socket.emit('timerStarting');
+                            io.sockets.emit('#timer', { countdown: countdown });
+                            console.log(countdown);
+                            if (countdown <= 0) {
+                                io.emit('timeout');
+                                ci.clearCorrectingInterval(timerID);
+                                countdown = 61;
+                                timerID = true;
+                            }
+                        },1000);
                     break;
                 } 
             };
             if(!answerIsWrong) {
-                //Record time
-                socket.timeUsed = countdown;
+                var isLastUser = !allUsers.some((user) => {
+                    //Negated, so true if all user has answered
+                    return (
+                        user.id !== socket.id && user.hasCorrectAnswer === false
+                    ); //true if at least one user hasn't answered
+                });
+                
+                socket.hasCorrectAnswer = true;
+                socket.timeUsed = 60-countdown;
                 console.log('answer is correct');
-                socket.emit('#correctAnswer');
+                socket.emit('correctAnswer');
+                if(!isLastUser){
+                    currentUser = allUsers.find((element)=>{
+                        return (element.hasCorrectAnswer === false && element.id !== socket.id);
+                    })
+                    socket.emit('#nextUser', currentUser.id);
+                }
                 socket.score += 1;
                 //Check if last person,
+                if(isLastUser){
                 //if so compare to other person's timer
-                var fastestSocket = {
-                    id: socket.id,
-                    time: socket.timeUsed,
-                };
-                //Find fastest socket.
-                allUsers.forEach((element) => {
-                    if (element.timeUsed < fastestSocket.time) {
-                        fastestSocket.id = element.id;
-                        fastestSocket.time = element.timeUsed;
+                    var fastestSocket = {
+                        id: socket.id,
+                        time: socket.timeUsed,
+                    };
+                    //Find fastest socket.
+                    allUsers.forEach((element) => {
+                        if (element.timeUsed < fastestSocket.time) {
+                            fastestSocket.id = element.id;
+                            fastestSocket.time = element.timeUsed;
+                        }
+                    });
+                    if (fastestSocket.id === socket.id) { //User is fastest socket
+                        socket.score += 1;
+                        socket.emit('won')
+                    } else { //User is not fastest socket, tell other socket to add score.
+                        io.to(fastestSocket.id).emit('addScore');
                     }
-                });
-                if (fastestSocket.id === socket.id) { //User is fastest socket
-                    socket.score += 1;
-                } else { //User is not fastest socket, tell other socket to add score.
-                    socket.to(fastestSocket.id).emit('addScore');
                 }
             }
 
         } else {
-            socket.emit('answer is wrong');
+            socket.emit('wrongAnswer');
+            allUsers.forEach((user)=> {
+                if(user.id !== socket.id && user.hasCorrectAnswer === true){
+                    io.to(user.id).emit('addScore');
+                }
+            })
         }
+        
     });
     socket.on('addScore', () => {
         socket.score += 1;
+        console.log(socket.score);
     })
     socket.on('reset', function() {
-        if(socket.type !== 'host') return;
-
-        allUsers.forEach((element) => {
-            element.timeUsed = 0;
-            element.score = 0;
-        })
-        socket.score = 0;
-        ci.clearCorrectingInterval(timerID);
-        countdown = 61;
-        timerID = true;
+        if(socket.type !== 'host'){ 
+            socket.emit('notHost');
+            return
+        };
+        try {
+            allUsers.forEach((element) => {
+                element.timeUsed = 0;
+                element.score = 0;
+                element.hasCorrectAnswer = false;
+            });
+            socket.score = 0;
+            ci.clearCorrectingInterval(timerID);
+            countdown = 61;
+            timerID = true;
+            socket.emit('resetSuccess');
+        } catch (error) {
+            socket.emit('resetError');
+        } 
+        
+        
     });
 
     socket.on('startTimer', function() {
         if(timerID == true){
             timerID = ci.setCorrectingInterval(function() {
                 countdown--;
-                io.sockets.emit('timer', { countdown: countdown });
+                socket.emit('timerStarting')
+                io.sockets.emit('#timer', { countdown: countdown });
                 console.log(countdown);
                 if(countdown<=0){
+                    io.emit('timeout');
                     ci.clearCorrectingInterval(timerID);
                     countdown = 61;
                     timerID = true;
                 }
             }, 1000);
         }
-  
     });
 
     
@@ -292,8 +350,8 @@ io.on('connection', (socket) => {
             --numUsers
         };
         console.log('user disconnected');
-        socket.broadcast.emit('A user disconnected');
-        socket.broadcast.emit(numUsers);
+        socket.broadcast.emit('userDisconnected');
+        socket.broadcast.emit('#numUsers', numUsers);
     });
 });
 
