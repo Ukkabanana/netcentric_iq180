@@ -265,6 +265,7 @@ io.on('connection', (socket) => {
                     });
                     if (fastestSocket.id === socket.id) { //User is fastest socket
                         socket.score += 1;
+                        socket.emit('won')
                     } else { //User is not fastest socket, tell other socket to add score.
                         io.to(fastestSocket.id).emit('addScore');
                     }
