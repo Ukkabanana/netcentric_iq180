@@ -119,12 +119,27 @@ var hostId = "";
 var countdown = 61;
 var timerID = true;
 var currentUser;
+var roomCode = "";
 io.on('connection', (socket) => {
     
     var addedUser = false;
     console.log('A user just connected!!');
     socket.broadcast.emit('userConnected');
-
+    
+    if(numUsers === 0){
+        socket.type = "host";
+        hostId = socket.id;
+        console.log("Host's Id is",hostId);
+        roomCode = "";
+        for (i = 0; i < 4; i++) {
+            roomCode += (Math.floor(Math.random() * 9)).toString();
+            console.log(roomCode);
+        }
+        socket.emit('#roomCode', roomCode);
+        console.log('roomcode: ',roomCode);
+    } else {
+        socket.type = "client";
+    }
     //Iterate through all rooms and get list of all sockets in there
     let rooms = io.sockets.adapter.rooms;
     for (let room of Object.keys(rooms)) {
@@ -134,31 +149,27 @@ io.on('connection', (socket) => {
     }
 
     //Client requests to add a new user.
-    socket.on('addUser', (username) => {
+    socket.on('addUser', (username, code) => {
+        code = roomCode;
         //Check if within this connection session, the user was already added
         if (addedUser) return;
-
+        if(code !== roomCode && socket.type !== 'host') {
+            socket.emit('roomCodeNotMatch');
+            return;
+        } 
+        
         //If user is the first person to join, make them the host and log their id.
-        if(numUsers === 0){
-            socket.type = "host";
-            hostId = socket.id;
-            console.log("Host's Id is",hostId);
-        } else{
-            socket.type = 'client';
-        }
 
         //Store username
         socket.username = username;
         socket.hasCorrectAnswer = false;
         //Array that stores the socket object for all sockets inside the network.
         allUsers.push(socket);
-        allUsers.forEach(element => {
-            console.log("ID: ",element.id, ": username: ",element.username)
-        });
+        
         ++numUsers;
         //Mark that user has been added then emit to everybody that a new dude joined.
         addedUser = true;
-        socket.broadcast.emit('#userJoined', {
+        socket.to('gameRoom').emit('#userJoined', {
             username: socket.username,
             type: socket.type,
             numUsers: numUsers,
@@ -325,9 +336,16 @@ io.on('connection', (socket) => {
         } catch (error) {
             io.emit('resetError');
         } 
-        
-        
     });
+
+    socket.on('genRoomCode', function() {
+        roomCode = "";
+        if(socket.type !== 'host') return;
+        for(i=0;i<4;i++){
+            roomCode += Math.floor(Math.random() * 9).toString();
+        }
+        socket.emit('roomCodeIs', roomCode);
+    })
 
     socket.on('startTimer', function() {
         socket.emit('timerStarting');
@@ -361,8 +379,9 @@ io.on('connection', (socket) => {
             timeUsed: desiredSocket.timeUsed, 
             type: desiredSocket.type, 
             hasAnswered: desiredSocket.hasAnswered, 
-            hasCorrectAnswer: desiredSocket.hasCorrectAnswer, });
-    })
+            hasCorrectAnswer: desiredSocket.hasCorrectAnswer, 
+        }))
+    });
 
     socket.on('disconnect', () => {
         //On disconnect socket
@@ -370,6 +389,14 @@ io.on('connection', (socket) => {
             allUsers.splice(allUsers.indexOf(socket.username),1);
             --numUsers
         };
+        try {
+            if (currentUser.id === socket.id) {
+                ci.clearCorrectingInterval;
+            }
+        } catch (TypeError) {
+            console.log('No current user yet');
+        }
+        
         console.log('user disconnected');
         socket.broadcast.emit('userDisconnected');
         socket.broadcast.emit('#numUsers', numUsers);
