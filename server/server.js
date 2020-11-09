@@ -245,7 +245,9 @@ io.on('connection', (socket) => {
                 socket.timeUsed = 60-countdown;
                 socket.score += 1;
                 console.log('answer is correct');
-                socket.emit('#correctAnswer', {timeUsed: socket.timeUsed, score: socket.score});
+                socket.emit('#correctAnswer');
+             socket.emit('#score' , socket.score);
+             socket.emit('#timeUsed', socket.timeUsed);
                 
                 if(!isLastUser){
                     currentUser = allUsers.find((element)=>{
@@ -270,8 +272,9 @@ io.on('connection', (socket) => {
                     });
                     if (fastestSocket.id === socket.id) { //User is fastest socket
                         socket.score += 1;
-                        socket.emit('#scoreChanged', socket.score);
-                        socket.emit('won', {timeUsed: socket.timeUsed, score: socket.score});
+                        socket.emit('won');
+                        socket.emit('#score', socket.score);
+                        socket.emit('#timeUsed', socket.timeUsed);
                     } else { //User is not fastest socket, tell other socket to add score.
                         io.to(fastestSocket.id).emit('addScore');
                     }
@@ -310,7 +313,9 @@ io.on('connection', (socket) => {
                 element.timeUsed = 0;
                 element.score = 0;
                 element.hasCorrectAnswer = false;
-                element.emit('resetSuccess', {timeUsed: element.timeUsed, score: element.score});
+                element.emit('resetSuccess');
+                element.emit('#score', element.score);
+                element.emit('#timeUsed', element.timeUsed);
             });
 
             ci.clearCorrectingInterval(timerID);
@@ -342,7 +347,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    
+    socket.on('requestObject',(id) => {
+        desiredSocket= allUsers.find((user)=> {
+           return user.id === id;
+        })
+        socket.emit('sendObject', ({id: desiredSocket.id, score: desiredSocket.score, timeUsed: desiredSocket.timeUsed, type: desiredSocket.type, hasAnswered: desiredSocket.hasAnswered, hasCorrectAnswer: desiredSocket.hasCorrectAnswer })
+    })
 
     socket.on('disconnect', () => {
         //On disconnect socket
