@@ -174,6 +174,7 @@ io.on('connection', (socket) => {
         };
         allUsers.forEach((user) => {
             user.hasCorrectAnswer = false;
+            user.score = 0;
         })
         console.log('executing game start')
         //Randomizes first user
@@ -182,7 +183,6 @@ io.on('connection', (socket) => {
         io.emit('gameStarting');
         io.emit('#firstUser', currentUser.username);
         socket.emit('#welcomeMessage',`Welcome ${socket.username}`);
-        socket.score = 0;
         socket.emit('#score', socket.score);
         //timer.start()
     });
@@ -253,7 +253,7 @@ io.on('connection', (socket) => {
                     currentUser = allUsers.find((element)=>{
                         return (element.hasAnswered === false && element.id !== socket.id);
                     })
-                    socket.emit('#nextUser', currentUser.id);
+                    socket.emit('#nextUser', currentUser.username);
                 }
                 
                 //Check if last person,
@@ -350,9 +350,9 @@ io.on('connection', (socket) => {
         socket.emit('#id', socket.id)
     })
 
-    socket.on('requestObject',(id) => {
+    socket.on('requestObject',(username) => {
         desiredSocket= allUsers.find((user)=> {
-           return user.id === id;
+           return user.username === username;
         })
         socket.emit('sendObject', ({id: desiredSocket.id, score: desiredSocket.score, timeUsed: desiredSocket.timeUsed, type: desiredSocket.type, hasAnswered: desiredSocket.hasAnswered, hasCorrectAnswer: desiredSocket.hasCorrectAnswer })
     })
