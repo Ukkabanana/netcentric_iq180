@@ -246,8 +246,8 @@ io.on('connection', (socket) => {
                 socket.score += 1;
                 console.log('answer is correct');
                 socket.emit('#correctAnswer');
-             socket.emit('#score' , socket.score);
-             socket.emit('#timeUsed', socket.timeUsed);
+                socket.emit('#score' , socket.score);
+                socket.emit('#timeUsed', socket.timeUsed);
                 
                 if(!isLastUser){
                     currentUser = allUsers.find((element)=>{
@@ -351,10 +351,17 @@ io.on('connection', (socket) => {
     })
 
     socket.on('requestObject',(username) => {
-        desiredSocket= allUsers.find((user)=> {
+        var desiredSocket= allUsers.find((user)=> {
            return user.username === username;
-        })
-        socket.emit('sendObject', ({id: desiredSocket.id, score: desiredSocket.score, timeUsed: desiredSocket.timeUsed, type: desiredSocket.type, hasAnswered: desiredSocket.hasAnswered, hasCorrectAnswer: desiredSocket.hasCorrectAnswer })
+        });
+        
+        socket.emit('#sendObject', ({
+            id: desiredSocket.id, 
+            score: desiredSocket.score, 
+            timeUsed: desiredSocket.timeUsed, 
+            type: desiredSocket.type, 
+            hasAnswered: desiredSocket.hasAnswered, 
+            hasCorrectAnswer: desiredSocket.hasCorrectAnswer, });
     })
 
     socket.on('disconnect', () => {
