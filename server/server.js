@@ -346,6 +346,9 @@ io.on('connection', (socket) => {
             }, 1000);
         }
     });
+    socket.on('getId', () => {
+        socket.emit('#id', socket.id)
+    })
 
     socket.on('requestObject',(id) => {
         desiredSocket= allUsers.find((user)=> {
