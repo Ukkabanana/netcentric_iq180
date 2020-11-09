@@ -297,7 +297,7 @@ io.on('connection', (socket) => {
     });
     socket.on('addScore', () => {
         socket.score += 1;
-        socket.emit('#scoreChanged', socket.score);
+        socket.emit('#score', socket.score);
         console.log(socket.score);
     })
     socket.on('reset', function() {
