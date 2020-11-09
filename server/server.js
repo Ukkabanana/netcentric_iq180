@@ -358,6 +358,13 @@ io.on('connection', (socket) => {
                 if(countdown<=1){
                     io.emit('timeout');
                     ci.clearCorrectingInterval(timerID);
+                    currentUser = allUsers.find((element) => {
+                        return (
+                            element.hasCorrectAnswer === false &&
+                            element.id !== socket.id
+                        );
+                    });
+                    socket.emit('#nextUser', currentUser.username);
                     countdown = 61;
                     timerID = true;
                 }
